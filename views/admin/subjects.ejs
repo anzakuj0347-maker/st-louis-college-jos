@@ -1,0 +1,98 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title"><%= editSubject ? 'Edit Subject' : 'Add Subject' %></h2>
+        <form class="admin-form" method="POST" action="<%= editSubject ? '/slc-admin/subjects/' + editSubject._id : '/slc-admin/subjects' %>">
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label for="name">Subject Name *</label>
+              <input type="text" id="name" name="name" required value="<%= editSubject ? editSubject.name : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="code">Subject Code *</label>
+              <input type="text" id="code" name="code" required placeholder="e.g. ENG101" value="<%= editSubject ? editSubject.code : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="classLevel">Class Level</label>
+              <select id="classLevel" name="classLevel">
+                <% ['JSS', 'SSS', 'Both'].forEach(function(level) { %>
+                  <option value="<%= level %>"<%= editSubject && editSubject.classLevel === level ? ' selected' : '' %>><%= level %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="department">Department</label>
+              <select id="department" name="department">
+                <% ['General', 'Science', 'Commercial', 'Arts'].forEach(function(dept) { %>
+                  <option value="<%= dept %>"<%= editSubject && editSubject.department === dept ? ' selected' : '' %>><%= dept %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold"><%= editSubject ? 'Update Subject' : 'Add Subject' %></button>
+            <% if (editSubject) { %><a href="/slc-admin/subjects" class="btn btn--outline">Cancel</a><% } %>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">All Subjects (<%= subjects.length %>)</h2>
+        <%- include('../partials/admin-search', { searchPlaceholder: searchPlaceholder }) %>
+        <% if (subjects.length) { %>
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table" data-admin-search-table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Department</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% subjects.forEach(function(s) { %>
+                  <tr data-search-row="<%= s.code %> <%= s.name %> <%= s.classLevel %> <%= s.department %>">
+                    <td><%= s.code %></td>
+                    <td><%= s.name %></td>
+                    <td><%= s.classLevel %></td>
+                    <td><%= s.department %></td>
+                    <td class="admin-actions">
+                      <a href="/slc-admin/subjects/<%= s._id %>/edit" class="admin-action-link">Edit</a>
+                      <form method="POST" action="/slc-admin/subjects/<%= s._id %>/delete" class="admin-inline-form" onsubmit="return confirm('Delete this subject?');">
+                        <button type="submit" class="admin-action-link admin-action-link--danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <p class="admin-search-empty" data-admin-search-empty hidden>No subjects match your search.</p>
+        <% } else { %>
+          <p class="admin-empty">No subjects yet. Add one above.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
+<script src="/js/admin-search.js"></script>

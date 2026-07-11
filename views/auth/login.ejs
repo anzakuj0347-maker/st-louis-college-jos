@@ -1,0 +1,32 @@
+<%- include('../partials/doc-start', { title: 'Check Result - Login' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Check Result</p>
+    <h1>Student Login</h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container auth-container">
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+    <form class="auth-form" method="POST" action="/results/login">
+      <div class="form-group">
+        <label for="studentId">Student ID *</label>
+        <input type="text" id="studentId" name="studentId" required placeholder="e.g. SLC2024001">
+      </div>
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn--gold">Login</button>
+    </form>
+    <p class="auth-hint">Use the Student ID and password provided by the school administration.</p>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

@@ -1,0 +1,21 @@
+<header class="site-header">
+  <div class="header-top">
+    <div class="container header-top-inner">
+      <a href="/" class="logo-link" aria-label="St. Louis College Jos Home">
+        <img src="/images/logo.jpg" alt="St. Louis College Jos Logo" class="school-logo">
+      </a>
+      <p class="school-name">St Louis College Jos</p>
+      <div class="header-utils">
+        <a href="/admission/apply-now" class="util-link">Apply Now</a>
+        <span class="util-divider">|</span>
+        <a href="/results/login" class="util-link">Check Result</a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <% if (typeof hideNav === 'undefined' || !hideNav) { %>
+    <%- include('nav') %>
+  <% } %>
+</header>

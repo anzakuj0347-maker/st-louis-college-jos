@@ -1,0 +1,25 @@
+<%- include('../partials/doc-start', { title: title }) %>
+
+<div class="print-toolbar no-print">
+  <p>
+    Student Terminal Report — <strong><%= student.firstName %> <%= student.lastName %></strong>
+    (<%= student.studentId %>) | <%= classLevel %> Arm <%= student.arm || '—' %>
+    | <%= term %> | <%= session %>
+  </p>
+  <a href="/results/dashboard?term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>" class="btn btn--outline">Back to Dashboard</a>
+</div>
+
+<section class="print-only print-ca-sheet student-terminal-report">
+  <%- include('partials/student-result-sheet', {
+    student,
+    classLevel,
+    term,
+    session,
+    subjectResults,
+    summary,
+    showPrintButton: true,
+    printAction: 'print'
+  }) %>
+</section>
+
+<%- include('../partials/doc-end') %>

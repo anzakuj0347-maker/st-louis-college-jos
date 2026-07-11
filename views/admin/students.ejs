@@ -1,0 +1,122 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title"><%= editStudent ? 'Edit Student' : 'Add Student' %></h2>
+        <form class="admin-form" method="POST" action="<%= editStudent ? '/slc-admin/students/' + editStudent._id : '/slc-admin/students' %>">
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label for="studentId">Student ID *</label>
+              <input type="text" id="studentId" name="studentId" required value="<%= editStudent ? editStudent.studentId : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" required value="<%= editStudent ? editStudent.firstName : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="middleName">Middle Name</label>
+              <input type="text" id="middleName" name="middleName" value="<%= editStudent ? editStudent.middleName || '' : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" required value="<%= editStudent ? editStudent.lastName : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="arm">Arm</label>
+              <select id="arm" name="arm">
+                <option value="">Select arm</option>
+                <% ['A', 'B', 'C', 'D', 'E', 'F'].forEach(function(armOption) { %>
+                  <option value="<%= armOption %>"<%= editStudent && editStudent.arm === armOption ? ' selected' : '' %>><%= armOption %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="classLevel">Class Level *</label>
+              <select id="classLevel" name="classLevel" required>
+                <option value="">Select class</option>
+                <% ['JSS 1', 'JSS 2', 'JSS 3', 'SSS 1', 'SSS 2', 'SSS 3'].forEach(function(level) { %>
+                  <option value="<%= level %>"<%= editStudent && editStudent.classLevel === level ? ' selected' : '' %>><%= level %></option>
+                <% }); %>
+              </select>
+            </div>
+            <% if (editStudent) { %>
+              <div class="form-group admin-form-full">
+                <label class="admin-checkbox-label">
+                  <input type="checkbox" name="regeneratePassword" value="on">
+                  Generate new Check Result login password
+                </label>
+              </div>
+            <% } %>
+          </div>
+          <% if (!editStudent) { %>
+            <p class="admin-form-note">A login password will be generated automatically and shown after the student is created.</p>
+          <% } %>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold"><%= editStudent ? 'Update Student' : 'Add Student' %></button>
+            <% if (editStudent) { %><a href="/slc-admin/students" class="btn btn--outline">Cancel</a><% } %>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">All Students (<%= students.length %>)</h2>
+        <%- include('../partials/admin-search', { searchPlaceholder: searchPlaceholder }) %>
+        <% if (students.length) { %>
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table" data-admin-search-table>
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Name</th>
+                  <th>Arm</th>
+                  <th>Class</th>
+                  <th>Offers</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% students.forEach(function(s) { %>
+                  <tr data-search-row="<%= s.studentId %> <%= s.firstName %> <%= s.middleName || '' %> <%= s.lastName %> <%= s.arm || '' %> <%= s.classLevel %>">
+                    <td><%= s.studentId %></td>
+                    <td><%= s.firstName %><% if (s.middleName) { %> <%= s.middleName %><% } %> <%= s.lastName %></td>
+                    <td><%= s.arm || '—' %></td>
+                    <td><%= s.classLevel %></td>
+                    <td><%= s.offeredSubjects ? s.offeredSubjects.length : 0 %> subject(s)</td>
+                    <td class="admin-actions">
+                      <a href="/slc-admin/students/<%= s._id %>/offers" class="admin-action-link">Offers</a>
+                      <a href="/slc-admin/students/<%= s._id %>/edit" class="admin-action-link">Edit</a>
+                      <form method="POST" action="/slc-admin/students/<%= s._id %>/delete" class="admin-inline-form" onsubmit="return confirm('Delete this student and their results?');">
+                        <button type="submit" class="admin-action-link admin-action-link--danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <p class="admin-search-empty" data-admin-search-empty hidden>No students match your search.</p>
+        <% } else { %>
+          <p class="admin-empty">No students yet. Add one above.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
+<script src="/js/admin-search.js"></script>

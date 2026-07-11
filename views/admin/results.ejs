@@ -1,0 +1,123 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title"><%= editResult ? 'Edit Result' : 'Add Result' %></h2>
+        <form class="admin-form" method="POST" action="<%= editResult ? '/slc-admin/results/' + editResult._id : '/slc-admin/results' %>">
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label for="student">Student *</label>
+              <select id="student" name="student" required>
+                <option value="">Select student</option>
+                <% students.forEach(function(s) { %>
+                  <option value="<%= s._id %>"<%= editResult && editResult.student.toString() === s._id.toString() ? ' selected' : '' %>>
+                    <%= s.studentId %> — <%= s.firstName %> <%= s.lastName %> (<%= s.classLevel %>)
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="subject">Subject *</label>
+              <select id="subject" name="subject" required>
+                <option value="">Select subject</option>
+                <% subjects.forEach(function(sub) { %>
+                  <option value="<%= sub._id %>"<%= editResult && editResult.subject.toString() === sub._id.toString() ? ' selected' : '' %>>
+                    <%= sub.code %> — <%= sub.name %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="score">Score (0–100) *</label>
+              <input type="number" id="score" name="score" min="0" max="100" required value="<%= editResult ? editResult.score : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="grade">Grade *</label>
+              <input type="text" id="grade" name="grade" required placeholder="e.g. A1, B2" value="<%= editResult ? editResult.grade : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="term">Term *</label>
+              <select id="term" name="term" required>
+                <% ['First Term', 'Second Term', 'Third Term'].forEach(function(t) { %>
+                  <option value="<%= t %>"<%= editResult && editResult.term === t ? ' selected' : '' %>><%= t %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="session">Session *</label>
+              <input type="text" id="session" name="session" required placeholder="e.g. 2025/2026" value="<%= editResult ? editResult.session : '2025/2026' %>">
+            </div>
+            <div class="form-group">
+              <label for="arm">Arm *</label>
+              <input type="text" id="arm" name="arm" required placeholder="e.g. A" value="<%= editResult ? editResult.arm : 'A' %>">
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold"><%= editResult ? 'Update Result' : 'Add Result' %></button>
+            <% if (editResult) { %><a href="/slc-admin/results" class="btn btn--outline">Cancel</a><% } %>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">All Results (<%= results.length %>)</h2>
+        <% if (results.length) { %>
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Subject</th>
+                  <th>Score</th>
+                  <th>Grade</th>
+                  <th>Term</th>
+                  <th>Session</th>
+                  <th>Arm</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% results.forEach(function(r) { %>
+                  <tr>
+                    <td><%= r.student ? r.student.studentId + ' — ' + r.student.firstName + ' ' + r.student.lastName : '—' %></td>
+                    <td><%= r.subject ? r.subject.name : '—' %></td>
+                    <td><%= r.total ?? r.score %></td>
+                    <td><%= r.grade %></td>
+                    <td><%= r.term %></td>
+                    <td><%= r.session %></td>
+                    <td><%= r.arm || '—' %></td>
+                    <td class="admin-actions">
+                      <a href="/slc-admin/results/<%= r._id %>/edit" class="admin-action-link">Edit</a>
+                      <form method="POST" action="/slc-admin/results/<%= r._id %>/delete" class="admin-inline-form" onsubmit="return confirm('Delete this result?');">
+                        <button type="submit" class="admin-action-link admin-action-link--danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="admin-empty">No results yet. Add students and subjects first, then add results above.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

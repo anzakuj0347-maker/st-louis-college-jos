@@ -1,0 +1,112 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: 'staff' }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Assign Classes — <%= staff.firstName %> <%= staff.lastName %></h2>
+        <p class="admin-offers-meta">
+          Staff ID: <strong><%= staff.staffId %></strong>
+          <% if (staff.phone) { %> | Phone: <strong><%= staff.phone %></strong><% } %>
+        </p>
+        <p class="admin-offers-hint">Select a subject and choose the class level this staff member teaches for that subject.</p>
+
+        <form class="admin-form" method="POST" action="/slc-admin/staff/<%= staff._id %>/assign" id="staffAssignForm">
+          <% function levelsForSubject(sub) {
+            if (sub.classLevel === 'JSS') return classLevels.filter(function(l) { return l.indexOf('JSS') === 0; });
+            if (sub.classLevel === 'SSS') return classLevels.filter(function(l) { return l.indexOf('SSS') === 0; });
+            return classLevels;
+          } %>
+          <% const deptOrder = ['General', 'Science', 'Commercial', 'Arts']; %>
+          <% deptOrder.forEach(function(dept) { if (!groupedSubjects[dept]) return; %>
+            <fieldset class="admin-offers-group">
+              <legend><%= dept %> Subjects</legend>
+              <div class="staff-assign-list">
+                <% groupedSubjects[dept].forEach(function(sub) { %>
+                  <% const subId = sub._id.toString(); %>
+                  <% const isChecked = assignmentsMap[subId] !== undefined; %>
+                  <% const selectedLevel = assignmentsMap[subId] || ''; %>
+                  <% const levels = levelsForSubject(sub); %>
+                  <div class="staff-assign-row">
+                    <label class="admin-offer-item staff-assign-subject">
+                      <input
+                        type="checkbox"
+                        name="assignmentSubjects"
+                        value="<%= sub._id %>"
+                        class="staff-assign-check"
+                        data-target="class-<%= subId %>"
+                        <%= isChecked ? 'checked' : '' %>
+                      >
+                      <span>
+                        <strong><%= sub.code %></strong> — <%= sub.name %>
+                        <em>(<%= sub.classLevel %>)</em>
+                      </span>
+                    </label>
+                    <select
+                      id="class-<%= subId %>"
+                      name="assignmentClasses[<%= sub._id %>]"
+                      class="staff-assign-class"
+                      <%= isChecked ? '' : 'disabled' %>
+                    >
+                      <option value="">Select class</option>
+                      <% levels.forEach(function(level) { %>
+                        <option value="<%= level %>"<%= selectedLevel === level ? ' selected' : '' %>><%= level %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+                <% }); %>
+              </div>
+            </fieldset>
+          <% }); %>
+
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold">Save Assignments</button>
+            <a href="/slc-admin/staff" class="btn btn--outline">Back to Staff</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
+<script>
+(function () {
+  function syncSelect(checkbox) {
+    const select = document.getElementById(checkbox.dataset.target);
+    if (!select) return;
+    select.disabled = !checkbox.checked;
+    if (!checkbox.checked) select.value = '';
+  }
+
+  document.querySelectorAll('.staff-assign-check').forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () { syncSelect(checkbox); });
+    syncSelect(checkbox);
+  });
+
+  document.getElementById('staffAssignForm').addEventListener('submit', function (e) {
+    let valid = true;
+    document.querySelectorAll('.staff-assign-check:checked').forEach(function (checkbox) {
+      const select = document.getElementById(checkbox.dataset.target);
+      if (select && !select.value) valid = false;
+    });
+    if (!valid) {
+      e.preventDefault();
+      alert('Please select a class level for each checked subject.');
+    }
+  });
+})();
+</script>

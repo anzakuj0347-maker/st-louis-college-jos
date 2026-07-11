@@ -1,0 +1,68 @@
+<%- include('../partials/doc-start', { title: 'My Results' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Check Result</p>
+    <h1>Welcome, <%= user.firstName %> <%= user.lastName %></h1>
+    <p>Class: <%= user.classLevel %> | Student ID: <%= user.studentId %></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <div class="dashboard-actions">
+      <form method="POST" action="/results/logout">
+        <button type="submit" class="btn btn--outline">Logout</button>
+      </form>
+    </div>
+
+    <form class="admin-form student-result-filters" method="GET" action="/results/dashboard">
+      <div class="admin-form-grid">
+        <div class="form-group">
+          <label for="term">Term *</label>
+          <select id="term" name="term" required>
+            <option value=""<%= !term ? ' selected' : '' %>>Select term</option>
+            <% availableTerms.forEach(function(t) { %>
+              <option value="<%= t %>"<%= term === t ? ' selected' : '' %>><%= t %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="session">Session *</label>
+          <select id="session" name="session" required>
+            <option value=""<%= !session ? ' selected' : '' %>>Select session</option>
+            <% availableSessions.forEach(function(s) { %>
+              <option value="<%= s %>"<%= session === s ? ' selected' : '' %>><%= s %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn--outline btn--sm">View Results</button>
+    </form>
+
+    <% if (!availableTerms.length && !availableSessions.length) { %>
+      <p>No results available yet. Please check back later.</p>
+    <% } else if (!hasSelection) { %>
+      <p class="admin-form-note">Select a term and session, then click <strong>View Results</strong> to see your scores.</p>
+    <% } else if (resultView) { %>
+      <section class="print-only print-ca-sheet student-terminal-report student-terminal-report--embedded no-print-chrome">
+        <%- include('partials/student-result-sheet', {
+          student: resultView.student,
+          classLevel: resultView.classLevel,
+          term: resultView.term,
+          session: resultView.session,
+          subjectResults: resultView.subjectResults,
+          summary: resultView.summary,
+          showPrintButton: canPrint,
+          printAction: 'link'
+        }) %>
+      </section>
+    <% } else { %>
+      <p>No results found for <%= term %>, <%= session %>.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

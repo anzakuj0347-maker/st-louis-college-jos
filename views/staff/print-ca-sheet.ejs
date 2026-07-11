@@ -1,0 +1,84 @@
+<%- include('../partials/doc-start', { title: title }) %>
+
+<div class="print-toolbar no-print">
+  <p>
+    Continuous Assessment Sheet — <strong><%= subject.code %></strong> (<%= subject.name %>)
+    | <%= classLevel %> Arm <%= arm %> | <%= term %> | <%= session %>
+  </p>
+  <button type="button" class="btn btn--gold" onclick="window.print()">Print</button>
+  <button type="button" class="btn btn--outline" onclick="window.close()">Close</button>
+</div>
+
+<section class="print-only print-ca-sheet">
+  <header class="print-ca-header">
+    <div class="print-ca-header-left">
+      <img src="/images/logo.jpg" alt="St. Louis College Jos Logo" class="print-school-logo">
+      <div>
+        <h1 class="print-school-name">St. Louis College Jos</h1>
+        <p class="print-doc-title">Continuous Assessment Sheet</p>
+      </div>
+    </div>
+    <div class="print-ca-header-right">
+      <table class="print-meta-table">
+        <tr><th>Subject</th><td><%= subject.code %> — <%= subject.name %></td></tr>
+        <tr><th>Class</th><td><%= classLevel %> Arm <%= arm %></td></tr>
+        <tr><th>Term</th><td><%= term %></td></tr>
+        <tr><th>Session</th><td><%= session %></td></tr>
+        <tr><th>Teacher</th><td><%= staff.firstName %> <%= staff.lastName %> (<%= staff.staffId %>)</td></tr>
+      </table>
+    </div>
+  </header>
+
+  <table class="print-data-table">
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Student ID</th>
+        <th>Name</th>
+        <th>1st Asgn</th>
+        <th>2nd Asgn</th>
+        <th>1st Test</th>
+        <th>2nd Test</th>
+        <th>Exam</th>
+        <th>Total</th>
+        <th>Average</th>
+        <th>Position</th>
+        <th>Grade</th>
+        <th>Remark</th>
+        <th>Sign</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% scoreRows.forEach(function(row, index) { %>
+        <% const s = row.student; %>
+        <tr>
+          <td><%= index + 1 %></td>
+          <td><%= s.studentId %></td>
+          <td><%= s.firstName %><% if (s.middleName) { %> <%= s.middleName %><% } %> <%= s.lastName %></td>
+          <td><%= row.firstAssignment !== '' ? row.firstAssignment : '—' %></td>
+          <td><%= row.secondAssignment !== '' ? row.secondAssignment : '—' %></td>
+          <td><%= row.firstTest !== '' ? row.firstTest : '—' %></td>
+          <td><%= row.secondTest !== '' ? row.secondTest : '—' %></td>
+          <td><%= row.exam !== '' ? row.exam : '—' %></td>
+          <td><%= row.total || '—' %></td>
+          <td><%= row.classAverage || '—' %></td>
+          <td><%= row.position || '—' %></td>
+          <td><%= row.grade || '—' %></td>
+          <td><%= row.remark || '—' %></td>
+          <td><%= row.sign || '—' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <footer class="print-ca-footer">
+    <div class="print-signature-block">
+      <p class="print-signature-line">Teacher's Signature</p>
+    </div>
+    <div class="print-signature-block">
+      <p class="print-signature-line">Head of Department</p>
+    </div>
+  </footer>
+</section>
+
+<%- include('../partials/doc-end') %>

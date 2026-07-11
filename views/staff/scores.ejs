@@ -1,0 +1,356 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Staff Portal</p>
+    <h1>Continuous Assessment Sheet</h1>
+    <p><strong><%= subject.code %></strong> — <%= subject.name %> | Class: <%= classLevel %> <%= arm %></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+    <div class="dashboard-actions">
+      <a href="/staff/dashboard" class="btn btn--outline">Back to Dashboard</a>
+      <% if (students.length) { %>
+        <a
+          href="/staff/scores/<%= subject._id %>/print-ca?classLevel=<%= encodeURIComponent(classLevel) %>&term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>&arm=<%= encodeURIComponent(arm) %>"
+          class="btn btn--gold"
+          target="_blank"
+          rel="noopener"
+        >Print CA Sheet (Arm <%= arm %>)</a>
+      <% } %>
+    </div>
+
+    <form class="admin-form staff-score-filters" method="GET" action="/staff/scores/<%= subject._id %>">
+      <input type="hidden" name="classLevel" value="<%= classLevel %>">
+      <div class="admin-form-grid">
+        <div class="form-group">
+          <label for="term">Term</label>
+          <select id="term" name="term">
+            <% ['First Term', 'Second Term', 'Third Term'].forEach(function(t) { %>
+              <option value="<%= t %>"<%= term === t ? ' selected' : '' %>><%= t %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="session">Session</label>
+          <select id="session" name="session" required>
+            <% activeSessions.forEach(function(s) { %>
+              <option value="<%= s.name %>"<%= session === s.name ? ' selected' : '' %>><%= s.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="arm">Arm</label>
+          <select id="arm" name="arm" required>
+            <% availableArms.forEach(function(a) { %>
+              <option value="<%= a %>"<%= arm === a ? ' selected' : '' %>><%= a %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn--outline btn--sm">Load Students</button>
+    </form>
+
+    <% if (students.length && availableArms.length > 1) { %>
+      <div class="ca-print-arms no-print">
+        <span class="ca-print-arms-label">Print CA sheet for other arms:</span>
+        <% availableArms.forEach(function(a) { %>
+          <% if (a !== arm) { %>
+            <a
+              href="/staff/scores/<%= subject._id %>/print-ca?classLevel=<%= encodeURIComponent(classLevel) %>&term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>&arm=<%= encodeURIComponent(a) %>"
+              class="btn btn--outline btn--sm"
+              target="_blank"
+              rel="noopener"
+            >Arm <%= a %></a>
+          <% } %>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <% if (students.length) { %>
+      <form class="admin-form" method="POST" action="/staff/scores/<%= subject._id %>">
+        <input type="hidden" name="classLevel" value="<%= classLevel %>">
+        <input type="hidden" name="term" value="<%= term %>">
+        <input type="hidden" name="session" value="<%= session %>">
+        <input type="hidden" name="arm" value="<%= arm %>">
+
+        <div class="ca-sheet-meta">
+          <div class="form-group">
+            <label for="sign">Teacher Sign (Initials)</label>
+            <input type="text" id="sign" name="sign" maxlength="4" value="<%= scoreRows[0] ? scoreRows[0].sign : '' %>" class="ca-sign-input">
+          </div>
+        </div>
+
+        <div class="admin-table-wrap ca-sheet-wrap">
+          <table class="data-table admin-table ca-sheet-table">
+            <thead>
+              <tr>
+                <th>S/N</th>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>1st Assignment</th>
+                <th>2nd Assignment</th>
+                <th>1st Test</th>
+                <th>2nd Test</th>
+                <th>Exam</th>
+                <th>Total</th>
+                <th>Average</th>
+                <th>Position</th>
+                <th>Grade</th>
+                <th>Remark</th>
+                <th>Sign</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% scoreRows.forEach(function(row, index) { %>
+                <% const s = row.student; %>
+                <tr data-student-row="<%= s._id %>">
+                  <td><%= index + 1 %></td>
+                  <td><%= s.studentId %></td>
+                  <td><%= s.firstName %><% if (s.middleName) { %> <%= s.middleName %><% } %> <%= s.lastName %></td>
+                  <td>
+                    <input
+                      type="number"
+                      class="ca-score-input"
+                      name="scores[<%= s._id %>][firstAssignment]"
+                      min="0"
+                      max="10"
+                      step="0.5"
+                      value="<%= row.firstAssignment %>"
+                      data-field="firstAssignment"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="ca-score-input"
+                      name="scores[<%= s._id %>][secondAssignment]"
+                      min="0"
+                      max="10"
+                      step="0.5"
+                      value="<%= row.secondAssignment %>"
+                      data-field="secondAssignment"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="ca-score-input"
+                      name="scores[<%= s._id %>][firstTest]"
+                      min="0"
+                      max="20"
+                      step="0.5"
+                      value="<%= row.firstTest %>"
+                      data-field="firstTest"
+                      data-max="20"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="ca-score-input"
+                      name="scores[<%= s._id %>][secondTest]"
+                      min="0"
+                      max="20"
+                      step="0.5"
+                      value="<%= row.secondTest %>"
+                      data-field="secondTest"
+                      data-max="20"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      class="ca-score-input"
+                      name="scores[<%= s._id %>][exam]"
+                      min="0"
+                      max="60"
+                      step="0.5"
+                      value="<%= row.exam %>"
+                      data-field="exam"
+                    >
+                  </td>
+                  <td class="ca-computed" data-output="total"><%= row.total || '' %></td>
+                  <td class="ca-computed ca-class-average" data-output="average"><%= row.classAverage || '' %></td>
+                  <td class="ca-computed" data-output="position"><%= row.position || '' %></td>
+                  <td class="ca-computed" data-output="grade"><%= row.grade || '' %></td>
+                  <td class="ca-computed" data-output="remark"><%= row.remark || '' %></td>
+                  <td class="ca-computed ca-sign-cell" data-output="sign"><%= row.sign || '' %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn btn--gold">Save Scores</button>
+        </div>
+      </form>
+    <% } else { %>
+      <p class="admin-empty">No students are registered for this subject in <%= classLevel %> arm <%= arm %>.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
+<script>
+(function () {
+  const classLevel = <%- JSON.stringify(classLevel) %>;
+  const crossArmTotals = <%- JSON.stringify(typeof crossArmTotals !== 'undefined' ? crossArmTotals : {}) %>;
+  const crossArmOfferingCount = <%= typeof crossArmOfferingCount !== 'undefined' ? crossArmOfferingCount : 0 %>;
+
+  function getClassTier(level) {
+    if (!level) return 'SSS';
+    const upper = level.toString().toUpperCase();
+    if (upper.includes('JSS')) return 'JSS';
+    return 'SSS';
+  }
+
+  function toNumber(value) {
+    const n = Number(value);
+    return Number.isNaN(n) ? 0 : n;
+  }
+
+  function gradeFromScore(score) {
+    const n = Number(score);
+    if (Number.isNaN(n) || score === '') return '';
+
+    if (getClassTier(classLevel) === 'JSS') {
+      if (n >= 75) return 'A';
+      if (n >= 65) return 'C';
+      if (n >= 50) return 'P';
+      return 'F9';
+    }
+
+    if (n >= 85) return 'A1';
+    if (n >= 75) return 'B2';
+    if (n >= 65) return 'B3';
+    if (n >= 60) return 'C4';
+    if (n >= 55) return 'C5';
+    if (n >= 50) return 'C6';
+    if (n >= 45) return 'D7';
+    if (n >= 40) return 'E8';
+    return 'F9';
+  }
+
+  function remarkFromGrade(grade) {
+    if (getClassTier(classLevel) === 'JSS') {
+      const remarks = {
+        A: 'excellent',
+        C: 'credit',
+        P: 'pass',
+        F9: 'fail'
+      };
+      return remarks[grade] || '';
+    }
+
+    const remarks = {
+      A1: 'excellent',
+      B2: 'very good',
+      B3: 'good',
+      C4: 'credit',
+      C5: 'credit',
+      C6: 'credit',
+      D7: 'pass',
+      E8: 'pass',
+      F9: 'fail'
+    };
+    return remarks[grade] || '';
+  }
+
+  function rowTotal(row) {
+    const inputs = row.querySelectorAll('.ca-score-input');
+    let total = 0;
+    inputs.forEach(function (input) {
+      total += toNumber(input.value);
+    });
+    return total;
+  }
+
+  function computePositionsByTotals(totalsMap) {
+    const ranked = Object.entries(totalsMap)
+      .filter(function (entry) {
+        return entry[1] > 0;
+      })
+      .sort(function (a, b) {
+        return b[1] - a[1];
+      });
+
+    const positions = {};
+    let rank = 0;
+    let prevTotal = null;
+
+    ranked.forEach(function (entry, index) {
+      const total = entry[1];
+      if (total !== prevTotal) {
+        rank = index + 1;
+        prevTotal = total;
+      }
+      positions[entry[0]] = rank;
+    });
+
+    return positions;
+  }
+
+  function computeSubjectClassAverage(totalsMap, offeringCount) {
+    if (!offeringCount) return '';
+    const sum = Object.values(totalsMap).reduce(function (acc, total) {
+      return acc + toNumber(total);
+    }, 0);
+    return Math.round((sum / offeringCount) * 100) / 100;
+  }
+
+  function updateSheet() {
+    const rows = Array.from(document.querySelectorAll('[data-student-row]'));
+    const mergedTotals = Object.assign({}, crossArmTotals);
+
+    rows.forEach(function (row) {
+      const studentId = row.getAttribute('data-student-row');
+      mergedTotals[studentId] = rowTotal(row);
+    });
+
+    const classAverage = computeSubjectClassAverage(mergedTotals, crossArmOfferingCount);
+    const positions = computePositionsByTotals(mergedTotals);
+    const signValue = (document.getElementById('sign') || {}).value || '';
+
+    rows.forEach(function (row) {
+      const studentId = row.getAttribute('data-student-row');
+      const total = rowTotal(row);
+      const grade = total > 0 ? gradeFromScore(total) : '';
+      const remark = remarkFromGrade(grade);
+      const position = positions[studentId] || '';
+
+      const totalCell = row.querySelector('[data-output="total"]');
+      const averageCell = row.querySelector('[data-output="average"]');
+      const positionCell = row.querySelector('[data-output="position"]');
+      const gradeCell = row.querySelector('[data-output="grade"]');
+      const remarkCell = row.querySelector('[data-output="remark"]');
+      const signCell = row.querySelector('[data-output="sign"]');
+
+      if (totalCell) totalCell.textContent = total > 0 ? total : '';
+      if (averageCell) averageCell.textContent = classAverage;
+      if (positionCell) positionCell.textContent = position;
+      if (gradeCell) gradeCell.textContent = grade;
+      if (remarkCell) remarkCell.textContent = remark;
+      if (signCell) signCell.textContent = signValue.toUpperCase();
+    });
+  }
+
+  document.querySelectorAll('.ca-score-input').forEach(function (input) {
+    input.addEventListener('input', updateSheet);
+  });
+
+  const signInput = document.getElementById('sign');
+  if (signInput) {
+    signInput.addEventListener('input', updateSheet);
+  }
+
+  updateSheet();
+})();
+</script>

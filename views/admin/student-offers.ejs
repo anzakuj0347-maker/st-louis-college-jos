@@ -1,0 +1,69 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: 'students' }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Subject Offers — <%= student.firstName %> <%= student.lastName %></h2>
+        <p class="admin-offers-meta">
+          Student ID: <strong><%= student.studentId %></strong> |
+          Class: <strong><%= student.classLevel %></strong> |
+          Tier: <strong><%= classTier %></strong>
+        </p>
+        <p class="admin-offers-hint">General subjects are required and pre-selected. Choose additional subjects for this student.</p>
+
+        <form class="admin-form" method="POST" action="/slc-admin/students/<%= student._id %>/offers">
+          <% const deptOrder = ['General', 'Science', 'Commercial', 'Arts']; %>
+          <% deptOrder.forEach(function(dept) { if (!groupedSubjects[dept]) return; %>
+            <fieldset class="admin-offers-group">
+              <legend><%= dept %> Subjects</legend>
+              <div class="admin-offers-checkboxes">
+                <% groupedSubjects[dept].forEach(function(sub) { %>
+                  <% const isGeneral = sub.department === 'General'; %>
+                  <% const isChecked = selectedIds.includes(sub._id.toString()); %>
+                  <label class="admin-offer-item<%= isGeneral ? ' admin-offer-item--required' : '' %>">
+                    <input
+                      type="checkbox"
+                      name="subjects"
+                      value="<%= sub._id %>"
+                      <%= isChecked ? 'checked' : '' %>
+                      <%= isGeneral ? 'checked disabled' : '' %>
+                    >
+                    <% if (isGeneral) { %>
+                      <input type="hidden" name="subjects" value="<%= sub._id %>">
+                    <% } %>
+                    <span>
+                      <strong><%= sub.code %></strong> — <%= sub.name %>
+                      <em>(<%= sub.classLevel %>)</em>
+                      <% if (isGeneral) { %><span class="admin-offer-badge">Required</span><% } %>
+                    </span>
+                  </label>
+                <% }); %>
+              </div>
+            </fieldset>
+          <% }); %>
+
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold">Save Subject Offers</button>
+            <a href="/slc-admin/students" class="btn btn--outline">Back to Students</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

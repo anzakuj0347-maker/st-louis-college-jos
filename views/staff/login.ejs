@@ -1,0 +1,32 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Staff Portal</p>
+    <h1>Staff Login</h1>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container auth-container">
+    <% if (error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+    <form class="auth-form" method="POST" action="/staff/login">
+      <div class="form-group">
+        <label for="staffId">Staff ID *</label>
+        <input type="text" id="staffId" name="staffId" required placeholder="e.g. STF001">
+      </div>
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn--gold">Login</button>
+    </form>
+    <p class="auth-hint">Use the Staff ID and password provided by the school administration.</p>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

@@ -1,0 +1,117 @@
+<%- include('../partials/doc-start', { title: 'Home' }) %>
+<%- include('../partials/header', { hideNav: true }) %>
+
+<div class="hero-section">
+  <%- include('../partials/nav', { transparentNav: true }) %>
+
+  <section class="hero" aria-label="Featured images">
+  <div class="hero-carousel" id="heroCarousel">
+    <% heroSlides.forEach(function(slide, index) { %>
+      <div class="hero-slide<%= index === 0 ? ' active' : '' %>" data-index="<%= index %>">
+        <img src="<%= slide.image %>" alt="<%= slide.title || 'St. Louis College Jos' %>" class="hero-image">
+        <div class="hero-overlay"></div>
+        <% if (slide.title) { %>
+          <div class="hero-caption">
+            <% if (index === 0) { %>
+              <h1 class="hero-title"><%= slide.title %></h1>
+            <% } else { %>
+              <h2 class="hero-title"><%= slide.title %></h2>
+            <% } %>
+            <% if (slide.subtitle) { %><p class="hero-subtitle"><%= slide.subtitle %></p><% } %>
+          </div>
+        <% } %>
+      </div>
+    <% }); %>
+  </div>
+  <button class="hero-nav hero-nav--prev" aria-label="Previous slide">&#10094;</button>
+  <button class="hero-nav hero-nav--next" aria-label="Next slide">&#10095;</button>
+  <div class="hero-dots" id="heroDots">
+    <% heroSlides.forEach(function(slide, index) { %>
+      <button class="hero-dot<%= index === 0 ? ' active' : '' %>" data-index="<%= index %>" aria-label="Go to slide <%= index + 1 %>"></button>
+    <% }); %>
+  </div>
+  </section>
+</div>
+
+<section class="intro-section">
+  <div class="container">
+    <div class="intro-grid">
+      <div class="intro-content">
+        <p class="eyebrow">Join Us at St. Louis College Jos!</p>
+        <h2>Find Your St. Louis</h2>
+        <p>St. Louis College Jos is one of Nigeria's distinguished Catholic girls' secondary schools — nurturing academic excellence, moral integrity, and leadership since 1960 on the beautiful Plateau.</p>
+        <a href="/admission/apply-now" class="btn btn--gold">Apply for Admission</a>
+      </div>
+      <div class="intro-quote">
+        <blockquote>
+          <p>"At St. Louis College Jos we promote the highest standards of excellence in our supportive atmosphere, forming young women of faith, learning, and service."</p>
+          <footer>— School Administration</footer>
+        </blockquote>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="events-section">
+  <div class="container">
+    <h2 class="section-title">School Events</h2>
+    <div class="events-grid">
+      <% events.forEach(function(event) { %>
+        <article class="event-card">
+          <div class="event-date">
+            <span class="event-month"><%= event.eventDate.toLocaleString('en-US', { month: 'short' }) %></span>
+            <span class="event-day"><%= event.eventDate.getDate() %></span>
+          </div>
+          <div class="event-body">
+            <h3><%= event.title %></h3>
+            <p><%= event.description %></p>
+            <span class="event-meta"><%= event.eventDate.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit' }) %> · <%= event.location %></span>
+          </div>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="news-section">
+  <div class="container">
+    <h2 class="section-title">School News</h2>
+    <div class="news-grid">
+      <% news.forEach(function(item) { %>
+        <article class="news-card">
+          <time datetime="<%= item.publishedAt.toISOString() %>"><%= item.publishedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></time>
+          <h3><%= item.title %></h3>
+          <p><%= item.excerpt %></p>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="programs-section">
+  <div class="container">
+    <h2 class="section-title">Explore Our Programmes</h2>
+    <p class="section-lead">Visit our Admissions page to learn more about joining the St. Louis family.</p>
+    <div class="programs-grid">
+      <a href="/academics/jss" class="program-card">
+        <h3>Junior Secondary (JSS)</h3>
+        <p>Foundation years building core academic skills</p>
+      </a>
+      <a href="/academics/sss" class="program-card">
+        <h3>Senior Secondary (SSS)</h3>
+        <p>Science, Commercial & Arts streams</p>
+      </a>
+      <a href="/admission/admission-requirement" class="program-card">
+        <h3>Admission</h3>
+        <p>Requirements, application & entrance exams</p>
+      </a>
+      <a href="/student-life/school-events" class="program-card">
+        <h3>Student Life</h3>
+        <p>Clubs, sports, events & leadership</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

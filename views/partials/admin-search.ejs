@@ -1,0 +1,12 @@
+<div class="admin-search-bar">
+  <label class="admin-search-label" for="adminSearchInput">Search</label>
+  <input
+    type="search"
+    id="adminSearchInput"
+    class="admin-search-input"
+    placeholder="<%= typeof searchPlaceholder !== 'undefined' ? searchPlaceholder : 'Search list...' %>"
+    data-admin-search
+    autocomplete="off"
+  >
+  <span class="admin-search-meta" data-admin-search-meta></span>
+</div>

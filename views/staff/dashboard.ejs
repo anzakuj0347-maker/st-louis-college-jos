@@ -1,0 +1,42 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Staff Portal</p>
+    <h1>Welcome, <%= staff.firstName %> <%= staff.lastName %></h1>
+    <p>Staff ID: <%= staff.staffId %></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container">
+    <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+    <div class="dashboard-actions">
+      <form method="POST" action="/staff/logout">
+        <button type="submit" class="btn btn--outline">Logout</button>
+      </form>
+    </div>
+
+    <h2>Class Assignments</h2>
+    <% if (staff.classAssignments && staff.classAssignments.length) { %>
+      <div class="staff-subject-grid">
+        <% staff.classAssignments.forEach(function(assignment) { %>
+          <% if (!assignment.subject) return; %>
+          <a href="/staff/scores/<%= assignment.subject._id %>?classLevel=<%= encodeURIComponent(assignment.classLevel) %>" class="staff-subject-card">
+            <strong><%= assignment.subject.code %></strong>
+            <span><%= assignment.subject.name %></span>
+            <em><%= assignment.classLevel %></em>
+          </a>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <p>No class assignments yet. Contact the administrator.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
