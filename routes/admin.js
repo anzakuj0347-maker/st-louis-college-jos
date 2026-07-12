@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminNav = require('../config/adminNav');
 const { requireAdmin } = require('../middleware/adminAuth');
+const { getSyncPreview, runSync, isSyncAvailable } = require('../utils/syncService');
 const Admin = require('../models/Admin');
 const Subject = require('../models/Subject');
 const User = require('../models/User');
@@ -790,6 +791,66 @@ router.post('/results/:id/delete', requireAdmin, async (req, res, next) => {
     res.redirect('/slc-admin/results?success=Result deleted.');
   } catch (err) {
     next(err);
+  }
+});
+
+/* ----- Synchronise (local → Atlas) ----- */
+router.get('/sync', requireAdmin, async (req, res, next) => {
+  try {
+    const preview = await getSyncPreview();
+    renderAdmin(res, 'admin/sync', {
+      title: 'Synchronise',
+      pageTitle: 'Synchronise',
+      activeSection: 'sync',
+      preview,
+      syncResult: null,
+      error: null,
+      success: req.query.success || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/sync', requireAdmin, async (req, res, next) => {
+  try {
+    const previewBefore = await getSyncPreview();
+    if (!previewBefore.canSubmit) {
+      return renderAdmin(res, 'admin/sync', {
+        title: 'Synchronise',
+        pageTitle: 'Synchronise',
+        activeSection: 'sync',
+        preview: previewBefore,
+        syncResult: null,
+        error: previewBefore.reason || 'Synchronise is not ready yet. Check the steps above.',
+        success: null
+      });
+    }
+    const syncResult = await runSync();
+    const preview = await getSyncPreview();
+    const { totals } = syncResult;
+    const success = `Synchronisation complete. ${totals.created} new record(s) pushed, ${totals.updated} updated.`;
+
+    renderAdmin(res, 'admin/sync', {
+      title: 'Synchronise',
+      pageTitle: 'Synchronise',
+      activeSection: 'sync',
+      preview,
+      syncResult,
+      error: null,
+      success
+    });
+  } catch (err) {
+    const preview = await getSyncPreview().catch(() => ({ available: false }));
+    renderAdmin(res, 'admin/sync', {
+      title: 'Synchronise',
+      pageTitle: 'Synchronise',
+      activeSection: 'sync',
+      preview,
+      syncResult: null,
+      error: err.message || 'Synchronisation failed.',
+      success: null
+    });
   }
 });
 

@@ -4,14 +4,16 @@ const Page = require('../models/Page');
 const Event = require('../models/Event');
 const News = require('../models/News');
 const HeroSlide = require('../models/HeroSlide');
+const { resolveHeroSlides } = require('../utils/heroImageHelpers');
 
 router.get('/', async (req, res, next) => {
   try {
-    const [heroSlides, events, news] = await Promise.all([
+    const [heroSlideDocs, events, news] = await Promise.all([
       HeroSlide.find({ active: true }).sort('order'),
       Event.find().sort('-eventDate').limit(8),
       News.find().sort('-publishedAt').limit(3)
     ]);
+    const heroSlides = resolveHeroSlides(heroSlideDocs);
     res.render('pages/home', {
       title: 'Home',
       heroSlides,

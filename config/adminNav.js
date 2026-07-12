@@ -4,5 +4,6 @@ module.exports = [
   { label: 'Staff Management', path: '/slc-admin/staff', key: 'staff' },
   { label: 'Manage Session', path: '/slc-admin/sessions', key: 'sessions' },
   { label: 'Result Management', path: '/slc-admin/results', key: 'results' },
-  { label: 'Manage Passwords', path: '/slc-admin/passwords', key: 'passwords' }
+  { label: 'Manage Passwords', path: '/slc-admin/passwords', key: 'passwords' },
+  { label: 'Synchronise', path: '/slc-admin/sync', key: 'sync' }
 ];

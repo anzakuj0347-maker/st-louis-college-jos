@@ -184,7 +184,7 @@ Our pride eternally.
 ];
 
 const heroSlides = [
-  { image: '/images/hero-01.jpg', title: 'Excellence in Education', subtitle: 'St. Louis College Jos — Forming Women of Faith and Learning', order: 1 },
+  { image: '/images/hero-01.png', title: 'Excellence in Education', subtitle: 'St. Louis College Jos — Forming Women of Faith and Learning', order: 1 },
   { image: '/images/hero-02.jfif', title: 'Our Students', subtitle: 'Young women prepared to lead with confidence', order: 2 },
   { image: '/images/hero-03.jfif', title: 'Campus Life', subtitle: 'A vibrant community on the Plateau', order: 3 },
   { image: '/images/hero-04.svg', title: 'Academic Excellence', subtitle: 'Rigorous programmes from JSS to SSS', order: 4 },

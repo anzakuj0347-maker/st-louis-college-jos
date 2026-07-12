@@ -1,0 +1,187 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+    <p>Push new or updated records from your local database to MongoDB Atlas when you are back online.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% const syncLabels = {
+        subjects: 'Subjects',
+        users: 'Students',
+        staffs: 'Staff',
+        academicsessions: 'Sessions',
+        results: 'Results',
+        heroslides: 'Hero Slides'
+      }; %>
+      <% const pendingTotal = preview.totals.created + preview.totals.updated; %>
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Connection Status</h2>
+        <% if (preview.canSubmit) { %>
+          <p class="sync-status sync-status--ready">Ready to synchronise</p>
+        <% } else if (preview.onRender) { %>
+          <p class="sync-status sync-status--unavailable">Open on your local computer</p>
+        <% } else { %>
+          <p class="sync-status sync-status--unavailable">Not ready yet</p>
+        <% } %>
+
+        <% if (preview.reason) { %>
+          <p class="admin-empty"><%= preview.reason %></p>
+        <% } %>
+
+        <dl class="sync-meta">
+          <div class="sync-meta-row">
+            <dt>Local database</dt>
+            <dd>
+              <% if (preview.localConnected) { %>
+                <span class="sync-dot sync-dot--ok">Connected</span>
+              <% } else if (preview.configured || preview.localUri) { %>
+                <span class="sync-dot sync-dot--bad">Not connected</span>
+              <% } %>
+              <code><%= preview.localUri %></code>
+            </dd>
+          </div>
+          <div class="sync-meta-row">
+            <dt>Online database (Atlas)</dt>
+            <dd>
+              <% if (preview.remoteConnected) { %>
+                <span class="sync-dot sync-dot--ok">Connected</span>
+              <% } else if (preview.configured || preview.remoteUri) { %>
+                <span class="sync-dot sync-dot--bad">Not connected</span>
+              <% } %>
+              <code><%= preview.remoteUri %></code>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="admin-panel sync-action-panel">
+        <h2 class="admin-panel-title">Pending Changes</h2>
+        <% if (preview.connected) { %>
+          <p>Records in your local database that are new or newer than the online copy.</p>
+        <% } else if (preview.showLocalTotals) { %>
+          <p>Local records waiting to be pushed once Atlas is connected (shown as “New” below).</p>
+        <% } else { %>
+          <p>Start local MongoDB and reload this page to see pending records.</p>
+        <% } %>
+
+        <div class="admin-table-wrap">
+          <table class="data-table admin-table">
+            <thead>
+              <tr>
+                <th>Data Type</th>
+                <th>New</th>
+                <th>Updated</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% Object.keys(syncLabels).forEach(function(key) {
+                const row = preview.counts[key] || { created: 0, updated: 0 };
+                const total = row.created + row.updated;
+              %>
+                <tr>
+                  <td><%= syncLabels[key] %></td>
+                  <td><%= row.created %></td>
+                  <td><%= row.updated %></td>
+                  <td><%= total %></td>
+                </tr>
+              <% }); %>
+              <tr class="sync-total-row">
+                <td><strong>All</strong></td>
+                <td><strong><%= preview.totals.created %></strong></td>
+                <td><strong><%= preview.totals.updated %></strong></td>
+                <td><strong><%= pendingTotal %></strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <form method="POST" action="/slc-admin/sync" class="sync-form" onsubmit="return <%= preview.canSubmit ? "confirm('Push local changes to MongoDB Atlas?')" : "false" %>;">
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold btn--sync" <%= preview.canSubmit ? '' : 'disabled' %>>
+              Synchronise Now
+            </button>
+          </div>
+          <% if (preview.canSubmit && pendingTotal === 0) { %>
+            <p class="sync-hint">No pending changes detected, but you can still sync to verify the connection.</p>
+          <% } else if (preview.onRender) { %>
+            <p class="sync-hint">This button only works on <strong>http://localhost:3000</strong>, not on your Render website.</p>
+          <% } else if (!preview.localConnected) { %>
+            <p class="sync-hint">Run <code>start-mongodb.bat</code> and keep that window open. Then run <code>npm start</code> in another terminal and reload this page.</p>
+          <% } else if (!preview.remoteConnected) { %>
+            <p class="sync-hint">Atlas is not reachable yet. In <a href="https://cloud.mongodb.com/v2" target="_blank" rel="noopener">MongoDB Atlas</a> go to <strong>Network Access</strong> → <strong>Add IP Address</strong> → <strong>Allow Access from Anywhere</strong> (or your current IP). Wait 1–2 minutes, then reload this page.</p>
+            <p class="sync-hint">Still failing? Run <code>npm run test:atlas</code> in your project folder, or paste Atlas’s <strong>Standard connection string</strong> into <code>REMOTE_MONGODB_URI_STANDARD</code> in <code>.env</code>.</p>
+          <% } else if (!preview.configured) { %>
+            <p class="sync-hint">Add <code>REMOTE_MONGODB_URI</code> with your Atlas connection string in <code>.env</code>.</p>
+          <% } %>
+        </form>
+      </div>
+
+      <% if (syncResult) { %>
+        <div class="admin-panel">
+          <h2 class="admin-panel-title">Last Sync Result</h2>
+          <p>Synchronised at <%= syncResult.syncedAt.toLocaleString() %>.</p>
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table">
+              <thead>
+                <tr>
+                  <th>Data Type</th>
+                  <th>Created</th>
+                  <th>Updated</th>
+                  <th>Skipped</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% Object.keys(syncLabels).forEach(function(key) {
+                  const row = syncResult.results[key] || { created: 0, updated: 0, skipped: 0 };
+                %>
+                  <tr>
+                    <td><%= syncLabels[key] %></td>
+                    <td><%= row.created %></td>
+                    <td><%= row.updated %></td>
+                    <td><%= row.skipped || 0 %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Hero Images &amp; Static Files</h2>
+        <p>Synchronise pushes hero slide settings (titles, order, image paths) to Atlas. The actual image files in <code>public/images/</code> are <strong>not</strong> uploaded by sync — you must deploy them to Render separately.</p>
+        <ol class="sync-steps">
+          <li>Commit your new images, e.g. <code>public/images/hero-01.png</code></li>
+          <li>Push to GitHub: <code>git add public/images/</code> then <code>git push</code></li>
+          <li>Render will redeploy automatically with the new image files</li>
+          <li>Then run <strong>Synchronise Now</strong> to update hero slide data in Atlas</li>
+        </ol>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">How It Works</h2>
+        <ol class="sync-steps">
+          <li><strong>While offline:</strong> keep <code>LOCAL_MONGODB_URI</code> in <code>.env</code>, run <code>start-mongodb.bat</code>, then <code>npm start</code>, and add your data.</li>
+          <li><strong>When back online:</strong> make sure <code>REMOTE_MONGODB_URI</code> has your Atlas connection string and your IP is allowed in Atlas.</li>
+          <li>Open <strong>http://localhost:3000/slc-admin/sync</strong> on your computer (not Render).</li>
+          <li>Click <strong>Synchronise Now</strong> to push local changes to Atlas.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
