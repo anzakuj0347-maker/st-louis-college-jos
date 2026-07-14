@@ -50,8 +50,7 @@ module.exports = [
     label: 'Check Result',
     type: 'dropdown',
     children: [
-      { label: 'Student Login', path: '/results/login' },
-      { label: 'Staff Login', path: '/staff/login' }
+      { label: 'Student Login', path: '/results/login' }
     ]
   },
   { label: 'Contact Us', path: '/contact', type: 'link' }
