@@ -1,0 +1,7 @@
+<nav class="press-club-nav" aria-label="Press Club navigation">
+  <a href="/press-club/events" class="press-club-nav-link<%= activeSection === 'events' ? ' active' : '' %>">School Events</a>
+  <a href="/press-club/news" class="press-club-nav-link<%= activeSection === 'news' ? ' active' : '' %>">School News</a>
+  <form method="POST" action="/press-club/logout" class="press-club-logout-form">
+    <button type="submit" class="btn btn--outline btn--sm">Logout</button>
+  </form>
+</nav>

@@ -47,6 +47,7 @@ app.use('/', require('./routes/index'));
 app.use('/results', require('./routes/auth'));
 app.use('/staff', require('./routes/staffAuth'));
 app.use('/slc-admin', require('./routes/admin'));
+app.use('/press-club', require('./routes/pressClub'));
 
 app.use((req, res) => {
   res.status(404).render('pages/404', { title: 'Page Not Found' });

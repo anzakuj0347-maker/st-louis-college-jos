@@ -18,7 +18,9 @@
     staffs: 'Staff',
     academicsessions: 'Sessions',
     results: 'Results',
-    heroslides: 'Hero Slides'
+    heroslides: 'Hero Slides',
+    events: 'Events',
+    news: 'News'
   };
 
   function hideAlerts() {

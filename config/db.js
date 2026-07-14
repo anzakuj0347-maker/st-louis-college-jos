@@ -39,6 +39,17 @@ const connectDB = async () => {
     await AcademicSession.create({ name: '2025/2026', term: 'First Term', isActive: true });
     console.log('Default academic session 2025/2026 created and activated.');
   }
+
+  const PressClub = require('../models/PressClub');
+  const pressClubCount = await PressClub.countDocuments();
+  if (pressClubCount === 0) {
+    await PressClub.create({
+      username: process.env.PRESS_CLUB_USERNAME || 'pressclub',
+      password: process.env.PRESS_CLUB_PASSWORD || 'pressclub123',
+      name: 'Press Club'
+    });
+    console.log('Default Press Club login created (username: pressclub).');
+  }
 };
 
 module.exports = connectDB;

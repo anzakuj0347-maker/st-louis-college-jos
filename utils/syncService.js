@@ -19,7 +19,9 @@ const COLLECTIONS = {
       { field: 'subject', collection: 'subjects', mapKey: 'code' }
     ]
   },
-  heroslides: { uniqueKey: 'order' }
+  heroslides: { uniqueKey: 'order' },
+  events: { compoundUniqueKeys: ['title', 'eventDate'] },
+  news: { compoundUniqueKeys: ['title', 'publishedAt'] }
 };
 
 const SYNC_STEP_LABELS = {
@@ -29,10 +31,12 @@ const SYNC_STEP_LABELS = {
   users: 'Students',
   staffs: 'Staff',
   heroslides: 'Hero slides',
+  events: 'Events',
+  news: 'News',
   results: 'Results'
 };
 
-const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'results'];
+const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'events', 'news', 'results'];
 
 function getLocalUri() {
   return process.env.LOCAL_MONGODB_URI || 'mongodb://127.0.0.1:27017/stlouis_college_jos';
@@ -237,6 +241,22 @@ function documentsNeedSync(localDoc, remoteDoc, config, idMaps, context = {}) {
     if (String(localDoc.name || '') !== String(remoteDoc.name || '')) return true;
     if (Boolean(localDoc.isActive) !== Boolean(remoteDoc.isActive)) return true;
     if (String(localDoc.term || 'First Term') !== String(remoteDoc.term || 'First Term')) return true;
+  }
+
+  if (config.compoundUniqueKeys?.includes('eventDate')) {
+    for (const field of ['title', 'description', 'location']) {
+      if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
+    }
+    if (Boolean(localDoc.featured) !== Boolean(remoteDoc.featured)) return true;
+    if (new Date(localDoc.eventDate).getTime() !== new Date(remoteDoc.eventDate).getTime()) return true;
+  }
+
+  if (config.compoundUniqueKeys?.includes('publishedAt')) {
+    for (const field of ['title', 'excerpt', 'content']) {
+      if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
+    }
+    if (Boolean(localDoc.featured) !== Boolean(remoteDoc.featured)) return true;
+    if (new Date(localDoc.publishedAt).getTime() !== new Date(remoteDoc.publishedAt).getTime()) return true;
   }
 
   if (config.uniqueKey === 'studentId' && config.refFields) {
@@ -766,6 +786,24 @@ async function runSync(onProgress) {
     );
 
     step = 6;
+    report(`Syncing ${SYNC_STEP_LABELS.events}...`, { collection: 'events' });
+    results.events = await syncSimpleCollection(
+      localConn.collection('events'),
+      remoteConn.collection('events'),
+      COLLECTIONS.events,
+      idMaps
+    );
+
+    step = 7;
+    report(`Syncing ${SYNC_STEP_LABELS.news}...`, { collection: 'news' });
+    results.news = await syncSimpleCollection(
+      localConn.collection('news'),
+      remoteConn.collection('news'),
+      COLLECTIONS.news,
+      idMaps
+    );
+
+    step = 8;
     report(`Syncing ${SYNC_STEP_LABELS.results}...`, { collection: 'results' });
     results.results = await syncResults(
       localConn.collection('results'),

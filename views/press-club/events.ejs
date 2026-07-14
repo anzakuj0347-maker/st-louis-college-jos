@@ -1,0 +1,95 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Press Club</p>
+    <h1><%= pageTitle %></h1>
+    <p>Updates appear on the homepage events section.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container press-club-layout">
+    <%- include('../partials/press-club-nav', { activeSection: activeSection }) %>
+    <div class="press-club-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title"><%= editEvent ? 'Edit Event' : 'Add Event' %></h2>
+        <form class="admin-form" method="POST" action="<%= editEvent ? '/press-club/events/' + editEvent._id : '/press-club/events' %>">
+          <div class="admin-form-grid">
+            <div class="form-group admin-form-full">
+              <label for="title">Event Title *</label>
+              <input type="text" id="title" name="title" required value="<%= editEvent ? editEvent.title : '' %>">
+            </div>
+            <div class="form-group admin-form-full">
+              <label for="description">Description</label>
+              <textarea id="description" name="description" rows="3"><%= editEvent ? editEvent.description || '' : '' %></textarea>
+            </div>
+            <div class="form-group">
+              <label for="eventDate">Date &amp; Time *</label>
+              <input type="datetime-local" id="eventDate" name="eventDate" required value="<%= editEvent ? toDateTimeLocalValue(editEvent.eventDate) : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="location">Location</label>
+              <input type="text" id="location" name="location" value="<%= editEvent ? editEvent.location || '' : '' %>" placeholder="e.g. School Hall">
+            </div>
+            <div class="form-group">
+              <label for="featured">Highlight on homepage</label>
+              <select id="featured" name="featured">
+                <option value="true"<%= editEvent && editEvent.featured ? ' selected' : '' %>>Yes</option>
+                <option value="false"<%= !editEvent || !editEvent.featured ? ' selected' : '' %>>No</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold"><%= editEvent ? 'Update Event' : 'Add Event' %></button>
+            <% if (editEvent) { %><a href="/press-club/events" class="btn btn--outline">Cancel</a><% } %>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">All Events (<%= events.length %>)</h2>
+        <% if (events.length) { %>
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Title</th>
+                  <th>Location</th>
+                  <th>Featured</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% events.forEach(function(event) { %>
+                  <tr>
+                    <td><%= event.eventDate.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+                    <td><%= event.title %></td>
+                    <td><%= event.location || '—' %></td>
+                    <td><%= event.featured ? 'Yes' : 'No' %></td>
+                    <td class="admin-actions">
+                      <a href="/press-club/events/<%= event._id %>/edit" class="admin-action-link">Edit</a>
+                      <form method="POST" action="/press-club/events/<%= event._id %>/delete" class="admin-inline-form" onsubmit="return confirm('Delete this event?');">
+                        <button type="submit" class="admin-action-link admin-action-link--danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="admin-empty">No events yet. Add one above to show on the homepage.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

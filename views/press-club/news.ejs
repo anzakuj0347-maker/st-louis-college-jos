@@ -1,0 +1,95 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Press Club</p>
+    <h1><%= pageTitle %></h1>
+    <p>Updates appear on the homepage news section.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container press-club-layout">
+    <%- include('../partials/press-club-nav', { activeSection: activeSection }) %>
+    <div class="press-club-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title"><%= editNews ? 'Edit News Article' : 'Add News Article' %></h2>
+        <form class="admin-form" method="POST" action="<%= editNews ? '/press-club/news/' + editNews._id : '/press-club/news' %>">
+          <div class="admin-form-grid">
+            <div class="form-group admin-form-full">
+              <label for="title">Headline *</label>
+              <input type="text" id="title" name="title" required value="<%= editNews ? editNews.title : '' %>">
+            </div>
+            <div class="form-group">
+              <label for="publishedAt">Publish Date *</label>
+              <input type="datetime-local" id="publishedAt" name="publishedAt" required value="<%= editNews ? toDateTimeLocalValue(editNews.publishedAt) : toDateTimeLocalValue(new Date()) %>">
+            </div>
+            <div class="form-group">
+              <label for="featured">Highlight on homepage</label>
+              <select id="featured" name="featured">
+                <option value="true"<%= editNews && editNews.featured ? ' selected' : '' %>>Yes</option>
+                <option value="false"<%= !editNews || !editNews.featured ? ' selected' : '' %>>No</option>
+              </select>
+            </div>
+            <div class="form-group admin-form-full">
+              <label for="excerpt">Short Summary *</label>
+              <textarea id="excerpt" name="excerpt" rows="3" required placeholder="Shown on the homepage card"><%= editNews ? editNews.excerpt || '' : '' %></textarea>
+            </div>
+            <div class="form-group admin-form-full">
+              <label for="content">Full Story (optional)</label>
+              <textarea id="content" name="content" rows="6" placeholder="Longer article text for future use"><%= editNews ? editNews.content || '' : '' %></textarea>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold"><%= editNews ? 'Update Article' : 'Add Article' %></button>
+            <% if (editNews) { %><a href="/press-club/news" class="btn btn--outline">Cancel</a><% } %>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">All News (<%= newsItems.length %>)</h2>
+        <% if (newsItems.length) { %>
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table">
+              <thead>
+                <tr>
+                  <th>Published</th>
+                  <th>Headline</th>
+                  <th>Summary</th>
+                  <th>Featured</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% newsItems.forEach(function(item) { %>
+                  <tr>
+                    <td><%= item.publishedAt.toLocaleDateString('en-GB', { dateStyle: 'medium' }) %></td>
+                    <td><%= item.title %></td>
+                    <td><%= item.excerpt ? (item.excerpt.length > 60 ? item.excerpt.slice(0, 60) + '…' : item.excerpt) : '—' %></td>
+                    <td><%= item.featured ? 'Yes' : 'No' %></td>
+                    <td class="admin-actions">
+                      <a href="/press-club/news/<%= item._id %>/edit" class="admin-action-link">Edit</a>
+                      <form method="POST" action="/press-club/news/<%= item._id %>/delete" class="admin-inline-form" onsubmit="return confirm('Delete this article?');">
+                        <button type="submit" class="admin-action-link admin-action-link--danger">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="admin-empty">No news articles yet. Add one above to show on the homepage.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

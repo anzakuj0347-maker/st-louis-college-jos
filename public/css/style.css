@@ -1475,6 +1475,69 @@ a:hover { color: var(--msm-red-dark); }
   margin-top: 0.5rem;
 }
 
+.press-club-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.press-club-main {
+  min-width: 0;
+}
+
+.press-club-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.25rem 0;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--royal-blue);
+}
+
+.press-club-nav-link {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: var(--transition);
+}
+
+.press-club-nav-link:hover {
+  background: var(--white);
+  color: var(--royal-blue);
+}
+
+.press-club-nav-link.active {
+  background: var(--white);
+  color: var(--royal-blue);
+  border-left-color: var(--royal-blue);
+  font-weight: 600;
+}
+
+.press-club-logout-form {
+  margin: 0.75rem 1.25rem 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-form textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.admin-form textarea:focus {
+  outline: none;
+  border-color: var(--royal-blue);
+}
+
 .ca-sheet-wrap {
   margin-top: 1rem;
 }
@@ -2149,6 +2212,36 @@ html {
 
   .admin-sidebar.is-open .admin-sidebar-body {
     display: block;
+  }
+
+  .press-club-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .press-club-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0.75rem 1rem;
+  }
+
+  .press-club-nav-link {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .press-club-nav-link.active {
+    border-left: none;
+    border-bottom-color: var(--royal-blue);
+  }
+
+  .press-club-logout-form {
+    margin: 0;
+    padding: 0;
+    border: none;
+    margin-left: auto;
   }
 
   .admin-sidebar-label {

@@ -1,0 +1,32 @@
+<%- include('../partials/doc-start', { title: 'Press Club Login' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Hidden Route</p>
+    <h1>Press Club Login</h1>
+    <p>Manage school events and news shown on the homepage.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container auth-container">
+    <% if (error) { %>
+      <div class="alert alert--error"><%= error %></div>
+    <% } %>
+    <form class="auth-form" method="POST" action="/press-club/login">
+      <div class="form-group">
+        <label for="username">Username *</label>
+        <input type="text" id="username" name="username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn--gold">Login</button>
+    </form>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
