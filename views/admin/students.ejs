@@ -17,7 +17,7 @@
 
       <div class="admin-panel">
         <h2 class="admin-panel-title"><%= editStudent ? 'Edit Student' : 'Add Student' %></h2>
-        <form class="admin-form" method="POST" action="<%= editStudent ? '/slc-admin/students/' + editStudent._id : '/slc-admin/students' %>">
+        <form class="admin-form" id="addStudentForm" method="POST" action="<%= editStudent ? '/slc-admin/students/' + editStudent._id : '/slc-admin/students' %>">
           <div class="admin-form-grid">
             <div class="form-group">
               <label for="studentId">Student ID *</label>
@@ -65,12 +65,26 @@
           <% if (!editStudent) { %>
             <p class="admin-form-note">A login password will be generated automatically and shown after the student is created.</p>
           <% } %>
-          <div class="admin-form-actions">
-            <button type="submit" class="btn btn--gold"><%= editStudent ? 'Update Student' : 'Add Student' %></button>
-            <% if (editStudent) { %><a href="/slc-admin/students" class="btn btn--outline">Cancel</a><% } %>
-          </div>
         </form>
+
+        <div class="admin-form-actions">
+          <% if (!editStudent) { %>
+            <form method="POST" action="/slc-admin/students/import" enctype="multipart/form-data" class="admin-import-form" id="studentImportForm">
+              <label class="btn btn--outline admin-import-label" for="studentImportFile">Import</label>
+              <input type="file" name="file" id="studentImportFile" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
+            </form>
+            <a href="/slc-admin/students/import/template" class="btn btn--outline">Download template</a>
+            <button type="submit" form="addStudentForm" class="btn btn--gold">Add Student</button>
+          <% } else { %>
+            <button type="submit" form="addStudentForm" class="btn btn--gold">Update Student</button>
+            <a href="/slc-admin/students" class="btn btn--outline">Cancel</a>
+          <% } %>
+        </div>
       </div>
+
+      <% if (!editStudent) { %>
+        <p class="admin-form-note admin-import-note">Import an Excel file with columns: Student ID, First Name, Middle Name, Last Name, Arm, Class Level.</p>
+      <% } %>
 
       <div class="admin-panel">
         <h2 class="admin-panel-title">All Students (<%= students.length %>)</h2>
@@ -120,3 +134,18 @@
 <%- include('../partials/footer') %>
 <%- include('../partials/doc-end') %>
 <script src="/js/admin-search.js"></script>
+<% if (!editStudent) { %>
+<script>
+  (function () {
+    const importFile = document.getElementById('studentImportFile');
+    const importForm = document.getElementById('studentImportForm');
+    if (!importFile || !importForm) return;
+
+    importFile.addEventListener('change', function () {
+      if (importFile.files.length) {
+        importForm.submit();
+      }
+    });
+  })();
+</script>
+<% } %>

@@ -20,20 +20,15 @@
     <form class="admin-form student-result-filters" method="GET" action="/results/dashboard">
       <div class="admin-form-grid">
         <div class="form-group">
-          <label for="term">Term *</label>
-          <select id="term" name="term" required>
-            <option value=""<%= !term ? ' selected' : '' %>>Select term</option>
-            <% availableTerms.forEach(function(t) { %>
-              <option value="<%= t %>"<%= term === t ? ' selected' : '' %>><%= t %></option>
-            <% }); %>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="session">Session *</label>
-          <select id="session" name="session" required>
-            <option value=""<%= !session ? ' selected' : '' %>>Select session</option>
-            <% availableSessions.forEach(function(s) { %>
-              <option value="<%= s %>"<%= session === s ? ' selected' : '' %>><%= s %></option>
+          <label for="period">Session *</label>
+          <select id="period" name="period" required>
+            <option value=""<%= !selectedPeriod ? ' selected' : '' %>>Select session</option>
+            <% sessionOptions.forEach(function(opt) {
+              const value = opt.session + '||' + opt.term;
+            %>
+              <option value="<%= value %>"<%= selectedPeriod === value ? ' selected' : '' %>>
+                <%= opt.label %><%= opt.isActive ? ' (Active)' : '' %>
+              </option>
             <% }); %>
           </select>
         </div>
@@ -41,11 +36,11 @@
       <button type="submit" class="btn btn--outline btn--sm">View Results</button>
     </form>
 
-    <% if (!availableTerms.length && !availableSessions.length) { %>
-      <p>No results available yet. Please check back later.</p>
+    <% if (!sessionOptions.length) { %>
+      <p>No sessions available yet. Please check back later.</p>
     <% } else if (!hasSelection) { %>
-      <p class="admin-form-note">Select a term and session, then click <strong>View Results</strong> to see your scores.</p>
-    <% } else if (resultView) { %>
+      <p class="admin-form-note">Select a session, then click <strong>View Results</strong> to see your scores.</p>
+    <% } else if (resultView && resultView.subjectResults.length) { %>
       <section class="print-only print-ca-sheet student-terminal-report student-terminal-report--embedded no-print-chrome">
         <%- include('partials/student-result-sheet', {
           student: resultView.student,
@@ -59,7 +54,7 @@
         }) %>
       </section>
     <% } else { %>
-      <p>No results found for <%= term %>, <%= session %>.</p>
+      <p>No results found for <%= term %>, <%= session %> yet.</p>
     <% } %>
   </div>
 </section>

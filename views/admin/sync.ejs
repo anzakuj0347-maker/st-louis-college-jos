@@ -22,8 +22,8 @@
         heroslides: 'Hero Slides'
       }; %>
       <% const pendingTotal = preview.totals.created + preview.totals.updated; %>
-      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
-      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+      <div id="syncAlertSuccess" class="alert alert--success" <% if (!success) { %>hidden<% } %>><%= success || '' %></div>
+      <div id="syncAlertError" class="alert alert--error" <% if (!error) { %>hidden<% } %>><%= error || '' %></div>
 
       <div class="admin-panel">
         <h2 class="admin-panel-title">Connection Status</h2>
@@ -107,9 +107,19 @@
           </table>
         </div>
 
-        <form method="POST" action="/slc-admin/sync" class="sync-form" onsubmit="return <%= preview.canSubmit ? "confirm('Push local changes to MongoDB Atlas?')" : "false" %>;">
+        <div id="syncProgressWrap" class="sync-progress-wrap" hidden>
+          <div class="sync-progress-head">
+            <span id="syncProgressText">Preparing synchronisation...</span>
+            <span id="syncProgressPercent">0%</span>
+          </div>
+          <div class="sync-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="syncProgressText">
+            <div id="syncProgressBar" class="sync-progress-bar"></div>
+          </div>
+        </div>
+
+        <div class="sync-form">
           <div class="admin-form-actions">
-            <button type="submit" class="btn btn--gold btn--sync" <%= preview.canSubmit ? '' : 'disabled' %>>
+            <button type="button" class="btn btn--gold btn--sync" id="syncStartBtn" <%= preview.canSubmit ? '' : 'disabled' %>>
               Synchronise Now
             </button>
           </div>
@@ -125,24 +135,24 @@
           <% } else if (!preview.configured) { %>
             <p class="sync-hint">Add <code>REMOTE_MONGODB_URI</code> with your Atlas connection string in <code>.env</code>.</p>
           <% } %>
-        </form>
+        </div>
       </div>
 
-      <% if (syncResult) { %>
-        <div class="admin-panel">
-          <h2 class="admin-panel-title">Last Sync Result</h2>
-          <p>Synchronised at <%= syncResult.syncedAt.toLocaleString() %>.</p>
-          <div class="admin-table-wrap">
-            <table class="data-table admin-table">
-              <thead>
-                <tr>
-                  <th>Data Type</th>
-                  <th>Created</th>
-                  <th>Updated</th>
-                  <th>Skipped</th>
-                </tr>
-              </thead>
-              <tbody>
+      <div class="admin-panel" id="syncResultPanel" <% if (!syncResult) { %>hidden<% } %>>
+        <h2 class="admin-panel-title">Last Sync Result</h2>
+        <p id="syncResultSummary"><% if (syncResult) { %>Synchronised at <%= syncResult.syncedAt.toLocaleString() %>.<% } %></p>
+        <div class="admin-table-wrap">
+          <table class="data-table admin-table">
+            <thead>
+              <tr>
+                <th>Data Type</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Skipped</th>
+              </tr>
+            </thead>
+            <tbody id="syncResultBody">
+              <% if (syncResult) { %>
                 <% Object.keys(syncLabels).forEach(function(key) {
                   const row = syncResult.results[key] || { created: 0, updated: 0, skipped: 0 };
                 %>
@@ -153,11 +163,11 @@
                     <td><%= row.skipped || 0 %></td>
                   </tr>
                 <% }); %>
-              </tbody>
-            </table>
-          </div>
+              <% } %>
+            </tbody>
+          </table>
         </div>
-      <% } %>
+      </div>
 
       <div class="admin-panel">
         <h2 class="admin-panel-title">Hero Images &amp; Static Files</h2>
@@ -185,3 +195,7 @@
 
 <%- include('../partials/footer') %>
 <%- include('../partials/doc-end') %>
+<script>
+  window.syncStepLabels = <%- JSON.stringify(syncLabels) %>;
+</script>
+<script src="/js/sync-progress.js"></script>

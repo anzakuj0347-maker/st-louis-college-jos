@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const adminNav = require('../config/adminNav');
 const { requireAdmin } = require('../middleware/adminAuth');
@@ -9,9 +10,10 @@ const User = require('../models/User');
 const Staff = require('../models/Staff');
 const Result = require('../models/Result');
 const AcademicSession = require('../models/AcademicSession');
-const { generateStudentPassword, getClassTier, getSubjectFilterForTier } = require('../utils/studentHelpers');
+const { generateStudentPassword, getClassTier, getSubjectFilterForTier, createStudentRecord } = require('../utils/studentHelpers');
+const { parseStudentRows, buildImportTemplateBuffer } = require('../utils/studentImportHelpers');
 const { generateLoginPassword } = require('../utils/passwordHelpers');
-const { CLASS_LEVELS, ARMS } = require('../config/schoolLevels');
+const { CLASS_LEVELS, ARMS, TERMS } = require('../config/schoolLevels');
 const { buildCredentials, filterCredentials } = require('../utils/credentialHelpers');
 
 async function normalizeStaffAssignments(staff) {
@@ -34,6 +36,37 @@ const renderAdmin = (res, view, data) => {
     ...data
   });
 };
+
+const studentImportUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    const allowed = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    const ext = file.originalname.toLowerCase();
+    if (allowed.includes(file.mimetype) || ext.endsWith('.xlsx') || ext.endsWith('.xls')) {
+      return cb(null, true);
+    }
+    cb(new Error('Upload an Excel file (.xlsx or .xls).'));
+  }
+});
+
+async function renderStudentsPage(res, data = {}) {
+  const students = data.students || await User.find().select('-password').populate('offeredSubjects', 'code name').sort('studentId');
+  renderAdmin(res, 'admin/students', {
+    title: 'Student Management',
+    pageTitle: 'Student Management',
+    activeSection: 'students',
+    students,
+    editStudent: null,
+    error: null,
+    success: null,
+    searchPlaceholder: 'Search by ID, name, arm or class...',
+    ...data
+  });
+}
 
 router.get('/login', (req, res) => {
   if (req.session.admin) return res.redirect('/slc-admin/subjects');
@@ -133,12 +166,11 @@ router.get('/subjects/:id/edit', requireAdmin, async (req, res, next) => {
 router.post('/subjects/:id', requireAdmin, async (req, res, next) => {
   try {
     const { name, code, classLevel, department } = req.body;
-    await Subject.findByIdAndUpdate(req.params.id, {
-      name,
-      code: code?.toUpperCase(),
-      classLevel,
-      department
-    });
+    await Subject.findByIdAndUpdate(
+      req.params.id,
+      { name, code: code?.toUpperCase(), classLevel, department },
+      { timestamps: true }
+    );
     res.redirect('/slc-admin/subjects?success=Subject updated successfully.');
   } catch (err) {
     next(err);
@@ -176,44 +208,92 @@ router.get('/students', requireAdmin, async (req, res, next) => {
 router.post('/students', requireAdmin, async (req, res, next) => {
   try {
     const { studentId, firstName, middleName, lastName, classLevel, arm } = req.body;
-    const plainPassword = generateStudentPassword();
-    const student = await User.create({
-      studentId: studentId?.trim(),
+    const { student, plainPassword } = await createStudentRecord(User, Subject, {
+      studentId,
       firstName,
-      middleName: middleName?.trim() || undefined,
+      middleName,
       lastName,
       classLevel,
-      arm: arm?.trim() || undefined,
-      password: plainPassword,
-      generatedPassword: plainPassword,
-      offeredSubjects: []
+      arm
     });
-
-    const tier = getClassTier(classLevel);
-    if (tier) {
-      const filter = getSubjectFilterForTier(tier);
-      const generalSubjects = await Subject.find({ ...filter, department: 'General' }).select('_id');
-      if (generalSubjects.length) {
-        student.offeredSubjects = generalSubjects.map((s) => s._id);
-        await student.save();
-      }
-    }
 
     const message = `Student added. ID: ${student.studentId}. Check Result login password: ${plainPassword}`;
     res.redirect(`/slc-admin/students?success=${encodeURIComponent(message)}`);
   } catch (err) {
     if (err.code === 11000) {
-      const students = await User.find().select('-password').sort('studentId');
-      return renderAdmin(res, 'admin/students', {
-        title: 'Student Management',
-        pageTitle: 'Student Management',
-        activeSection: 'students',
-        students,
-        editStudent: null,
-        error: 'Student ID already exists.',
-        success: null,
-        searchPlaceholder: 'Search by ID, name, arm or class...'
-      });
+      return renderStudentsPage(res, { error: 'Student ID already exists.' });
+    }
+    next(err);
+  }
+});
+
+router.get('/students/import/template', requireAdmin, (req, res) => {
+  const buffer = buildImportTemplateBuffer();
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="student-import-template.xlsx"');
+  res.send(buffer);
+});
+
+router.post('/students/import', requireAdmin, (req, res, next) => {
+  studentImportUpload.single('file')(req, res, (err) => {
+    if (err) {
+      return res.redirect(`/slc-admin/students?error=${encodeURIComponent(err.message)}`);
+    }
+    next();
+  });
+}, async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.redirect(`/slc-admin/students?error=${encodeURIComponent('Choose an Excel file to import.')}`);
+    }
+
+    const { students, errors: parseErrors } = parseStudentRows(req.file.buffer);
+    const importErrors = [...parseErrors];
+    let imported = 0;
+
+    for (const row of students) {
+      try {
+        await createStudentRecord(User, Subject, row);
+        imported += 1;
+      } catch (err) {
+        if (err.code === 11000) {
+          importErrors.push({
+            rowNumber: null,
+            studentId: row.studentId,
+            messages: ['Student ID already exists']
+          });
+        } else {
+          importErrors.push({
+            rowNumber: null,
+            studentId: row.studentId,
+            messages: [err.message || 'Could not import student']
+          });
+        }
+      }
+    }
+
+    if (!imported && importErrors.length) {
+      const preview = importErrors
+        .slice(0, 5)
+        .map((item) => `${item.studentId}: ${item.messages.join(', ')}`)
+        .join(' | ');
+      return res.redirect(`/slc-admin/students?error=${encodeURIComponent(`Import failed. ${preview}`)}`);
+    }
+
+    let message = `${imported} student(s) imported successfully.`;
+    if (importErrors.length) {
+      const preview = importErrors
+        .slice(0, 5)
+        .map((item) => `${item.studentId}: ${item.messages.join(', ')}`)
+        .join(' | ');
+      const suffix = importErrors.length > 5 ? ` (+${importErrors.length - 5} more)` : '';
+      message += ` ${importErrors.length} row(s) skipped: ${preview}${suffix}`;
+    }
+
+    res.redirect(`/slc-admin/students?success=${encodeURIComponent(message)}`);
+  } catch (err) {
+    if (err.message) {
+      return res.redirect(`/slc-admin/students?error=${encodeURIComponent(err.message)}`);
     }
     next(err);
   }
@@ -619,12 +699,13 @@ router.post('/passwords/staff/:id/regenerate', requireAdmin, async (req, res, ne
 /* ----- Sessions ----- */
 router.get('/sessions', requireAdmin, async (req, res, next) => {
   try {
-    const sessions = await AcademicSession.find().sort('-createdAt');
+    const sessions = await AcademicSession.find().sort({ name: 1, term: 1 });
     renderAdmin(res, 'admin/sessions', {
       title: 'Manage Session',
       pageTitle: 'Manage Session',
       activeSection: 'sessions',
       sessions,
+      terms: TERMS,
       error: req.query.error ? decodeURIComponent(req.query.error) : null,
       success: req.query.success ? decodeURIComponent(req.query.success) : null
     });
@@ -636,21 +717,27 @@ router.get('/sessions', requireAdmin, async (req, res, next) => {
 router.post('/sessions', requireAdmin, async (req, res, next) => {
   try {
     const name = req.body.name?.trim();
+    const term = req.body.term?.trim();
     const isActive = req.body.isActive === 'true';
 
     if (!name) {
       return res.redirect(`/slc-admin/sessions?error=${encodeURIComponent('Session name is required.')}`);
     }
 
-    if (isActive) {
-      await AcademicSession.updateMany({}, { isActive: false });
+    if (!term || !TERMS.includes(term)) {
+      return res.redirect(`/slc-admin/sessions?error=${encodeURIComponent('Please select a valid term.')}`);
     }
 
-    await AcademicSession.create({ name, isActive });
+    const existing = await AcademicSession.findOne({ name, term });
+    if (existing) {
+      return res.redirect(`/slc-admin/sessions?error=${encodeURIComponent(`Session "${name}" for ${term} already exists.`)}`);
+    }
+
+    await AcademicSession.create({ name, term, isActive });
     res.redirect(`/slc-admin/sessions?success=${encodeURIComponent('Session created successfully.')}`);
   } catch (err) {
     if (err.code === 11000) {
-      return res.redirect(`/slc-admin/sessions?error=${encodeURIComponent('That session already exists.')}`);
+      return res.redirect(`/slc-admin/sessions?error=${encodeURIComponent('That session and term combination already exists.')}`);
     }
     next(err);
   }
@@ -662,7 +749,6 @@ router.post('/sessions/:id/toggle', requireAdmin, async (req, res, next) => {
     if (!sessionDoc) return res.redirect('/slc-admin/sessions');
 
     if (!sessionDoc.isActive) {
-      await AcademicSession.updateMany({}, { isActive: false });
       sessionDoc.isActive = true;
     } else {
       sessionDoc.isActive = false;
@@ -812,6 +898,36 @@ router.get('/sync', requireAdmin, async (req, res, next) => {
   }
 });
 
+router.post('/sync/run', requireAdmin, async (req, res) => {
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+
+  const send = (payload) => {
+    res.write(`${JSON.stringify(payload)}\n`);
+  };
+
+  try {
+    const previewBefore = await getSyncPreview();
+    if (!previewBefore.canSubmit) {
+      send({ type: 'error', message: previewBefore.reason || 'Synchronise is not ready yet.' });
+      return res.end();
+    }
+
+    send({ type: 'progress', percent: 0, message: 'Starting synchronisation...', step: 0, totalSteps: 7 });
+
+    const syncResult = await runSync((progress) => {
+      send({ type: 'progress', ...progress });
+    });
+
+    send({ type: 'complete', syncResult });
+    res.end();
+  } catch (err) {
+    send({ type: 'error', message: err.message || 'Synchronisation failed.' });
+    res.end();
+  }
+});
+
 router.post('/sync', requireAdmin, async (req, res, next) => {
   try {
     const previewBefore = await getSyncPreview();
@@ -829,7 +945,12 @@ router.post('/sync', requireAdmin, async (req, res, next) => {
     const syncResult = await runSync();
     const preview = await getSyncPreview();
     const { totals } = syncResult;
-    const success = `Synchronisation complete. ${totals.created} new record(s) pushed, ${totals.updated} updated.`;
+    const successParts = [
+      `${totals.created} new record(s) pushed`,
+      `${totals.updated} updated`
+    ];
+    if (totals.deleted) successParts.push(`${totals.deleted} removed`);
+    const success = `Synchronisation complete. ${successParts.join(', ')}.`;
 
     renderAdmin(res, 'admin/sync', {
       title: 'Synchronise',

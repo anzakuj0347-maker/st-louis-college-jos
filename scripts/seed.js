@@ -301,7 +301,7 @@ async function seed() {
     offeredSubjects: subjects.filter((s) => s.classLevel === 'Both' || s.classLevel === 'SSS').map((s) => s._id)
   });
 
-  await AcademicSession.create({ name: '2025/2026', isActive: true });
+  await AcademicSession.create({ name: '2025/2026', term: 'First Term', isActive: true });
 
   await Result.insertMany([
     { student: student._id, subject: subjects[0]._id, firstAssignment: 8, secondAssignment: 7, firstTest: 9, secondTest: 8, exam: 46, total: 78, score: 78, grade: 'B3', remark: 'Good', term: 'Second Term', session: '2025/2026', arm: 'A' },

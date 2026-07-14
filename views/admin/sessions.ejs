@@ -5,7 +5,7 @@
   <div class="container">
     <p class="eyebrow">Administration</p>
     <h1><%= pageTitle %></h1>
-    <p>Create academic sessions and set which session is active for staff score entry.</p>
+    <p>Create academic sessions and activate each term staff should use for score entry and students should see when viewing results.</p>
   </div>
 </section>
 
@@ -23,6 +23,15 @@
             <div class="form-group">
               <label for="name">Session Name *</label>
               <input type="text" id="name" name="name" required placeholder="e.g. 2025/2026">
+            </div>
+            <div class="form-group">
+              <label for="term">Term *</label>
+              <select id="term" name="term" required>
+                <option value="">Select term</option>
+                <% terms.forEach(function(t) { %>
+                  <option value="<%= t %>"><%= t %></option>
+                <% }); %>
+              </select>
             </div>
             <div class="form-group">
               <label for="isActive">Status</label>
@@ -46,6 +55,7 @@
               <thead>
                 <tr>
                   <th>Session</th>
+                  <th>Term</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -54,6 +64,7 @@
                 <% sessions.forEach(function(s) { %>
                   <tr>
                     <td><%= s.name %></td>
+                    <td><%= s.term || '—' %></td>
                     <td>
                       <% if (s.isActive) { %>
                         <span class="session-badge session-badge--active">Active</span>

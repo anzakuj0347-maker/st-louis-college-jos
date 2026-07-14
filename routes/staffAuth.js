@@ -16,6 +16,12 @@ const {
   getCrossArmSubjectStats
 } = require('../utils/scoreHelpers');
 const { ARMS } = require('../config/schoolLevels');
+const {
+  getActiveSessions,
+  parseSessionPeriod,
+  sessionPeriodKey,
+  findActiveSessionMatch
+} = require('../utils/sessionHelpers');
 
 function staffHasAssignment(staff, subjectId, classLevel) {
   return (staff.classAssignments || []).some(
@@ -44,10 +50,6 @@ function parseScoreComponent(field, rawValue) {
   const max = SCORE_COMPONENT_MAX[field];
   if (max !== undefined && score > max) return max;
   return score;
-}
-
-async function getActiveSessions() {
-  return AcademicSession.find({ isActive: true }).sort('name');
 }
 
 async function getAvailableArms(subjectId, classLevel) {
@@ -122,17 +124,32 @@ router.get('/scores/:subjectId', requireStaff, async (req, res, next) => {
     const subject = await Subject.findById(subjectId);
     if (!subject) return res.redirect('/staff/dashboard');
 
-    const activeSessions = await getActiveSessions();
+    const activeSessions = await getActiveSessions(AcademicSession);
     if (!activeSessions.length) {
       return res.redirect(`/staff/dashboard?error=${encodeURIComponent('No active session. Contact the administrator.')}`);
     }
 
-    const term = req.query.term || 'First Term';
-    const session = req.query.session || activeSessions[0].name;
-    const activeSession = activeSessions.find((s) => s.name === session);
+    let session = '';
+    let term = '';
+
+    if (req.query.sessionPeriod) {
+      ({ session, term } = parseSessionPeriod(req.query.sessionPeriod));
+    } else if (req.query.session && req.query.term) {
+      session = req.query.session.trim();
+      term = req.query.term.trim();
+    } else {
+      session = activeSessions[0].name;
+      term = activeSessions[0].term;
+    }
+
+    const activeSession = findActiveSessionMatch(activeSessions, session, term);
     if (!activeSession) {
       return res.redirect(`/staff/dashboard?error=${encodeURIComponent('Selected session is not active.')}`);
     }
+
+    session = activeSession.name;
+    term = activeSession.term;
+    const selectedPeriod = sessionPeriodKey(session, term);
 
     const availableArms = await getAvailableArms(subjectId, classLevel);
     const arm = req.query.arm || availableArms[0] || 'A';
@@ -175,6 +192,7 @@ router.get('/scores/:subjectId', requireStaff, async (req, res, next) => {
       scoreRows,
       term,
       session,
+      selectedPeriod,
       arm,
       availableArms,
       activeSessions,
@@ -203,7 +221,11 @@ router.post('/scores/:subjectId', requireStaff, async (req, res, next) => {
       return res.redirect(`/staff/dashboard?error=${encodeURIComponent('Invalid class assignment.')}`);
     }
 
-    const activeSession = await AcademicSession.findOne({ name: session?.trim(), isActive: true });
+    const activeSession = await AcademicSession.findOne({
+      name: session?.trim(),
+      term: term?.trim(),
+      isActive: true
+    });
     if (!activeSession) {
       return res.redirect(`/staff/dashboard?error=${encodeURIComponent('Only active sessions can be used for score entry.')}`);
     }
@@ -258,8 +280,7 @@ router.post('/scores/:subjectId', requireStaff, async (req, res, next) => {
 
     const qs = [
       `classLevel=${encodeURIComponent(classLevel)}`,
-      `term=${encodeURIComponent(term)}`,
-      `session=${encodeURIComponent(session)}`,
+      `sessionPeriod=${encodeURIComponent(sessionPeriodKey(session, term))}`,
       `arm=${encodeURIComponent(arm)}`,
       `success=${encodeURIComponent('Scores saved successfully.')}`
     ].join('&');
@@ -286,9 +307,20 @@ router.get('/scores/:subjectId/print-ca', requireStaff, async (req, res, next) =
     const subject = await Subject.findById(subjectId);
     if (!subject) return res.redirect('/staff/dashboard');
 
-    const activeSessions = await getActiveSessions();
-    const term = req.query.term || 'First Term';
-    const session = req.query.session || activeSessions[0]?.name;
+    const activeSessions = await getActiveSessions(AcademicSession);
+    let session = '';
+    let term = '';
+
+    if (req.query.sessionPeriod) {
+      ({ session, term } = parseSessionPeriod(req.query.sessionPeriod));
+    } else if (req.query.session && req.query.term) {
+      session = req.query.session.trim();
+      term = req.query.term.trim();
+    } else if (activeSessions[0]) {
+      session = activeSessions[0].name;
+      term = activeSessions[0].term;
+    }
+
     const arm = req.query.arm || 'A';
 
     const students = await User.find({

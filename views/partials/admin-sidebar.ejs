@@ -1,23 +1,29 @@
-<aside class="admin-sidebar">
-  <div class="admin-sidebar-head">
-    <p class="admin-sidebar-label">SLC Admin</p>
+<aside class="admin-sidebar" id="adminSidebar">
+  <button type="button" class="admin-sidebar-toggle" id="adminSidebarToggle" aria-expanded="false" aria-controls="adminSidebarBody">
+    <span>Admin Menu</span>
+    <span class="admin-sidebar-toggle-icon" aria-hidden="true"></span>
+  </button>
+  <div class="admin-sidebar-body" id="adminSidebarBody">
+    <div class="admin-sidebar-head">
+      <p class="admin-sidebar-label">SLC Admin</p>
+      <% if (typeof adminNav !== 'undefined') { %>
+        <nav aria-label="Admin navigation">
+          <ul class="admin-sidebar-nav">
+            <% adminNav.forEach(function(item) { %>
+              <li>
+                <a href="<%= item.path %>" class="admin-sidebar-link<%= activeSection === item.key ? ' active' : '' %>">
+                  <%= item.label %>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        </nav>
+      <% } %>
+    </div>
     <% if (typeof adminNav !== 'undefined') { %>
-      <nav aria-label="Admin navigation">
-        <ul class="admin-sidebar-nav">
-          <% adminNav.forEach(function(item) { %>
-            <li>
-              <a href="<%= item.path %>" class="admin-sidebar-link<%= activeSection === item.key ? ' active' : '' %>">
-                <%= item.label %>
-              </a>
-            </li>
-          <% }); %>
-        </ul>
-      </nav>
+      <form method="POST" action="/slc-admin/logout" class="admin-logout-form">
+        <button type="submit" class="btn btn--outline btn--sm">Logout</button>
+      </form>
     <% } %>
   </div>
-  <% if (typeof adminNav !== 'undefined') { %>
-    <form method="POST" action="/slc-admin/logout" class="admin-logout-form">
-      <button type="submit" class="btn btn--outline btn--sm">Logout</button>
-    </form>
-  <% } %>
 </aside>

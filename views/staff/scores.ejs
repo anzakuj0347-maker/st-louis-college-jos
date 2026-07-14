@@ -18,7 +18,7 @@
       <a href="/staff/dashboard" class="btn btn--outline">Back to Dashboard</a>
       <% if (students.length) { %>
         <a
-          href="/staff/scores/<%= subject._id %>/print-ca?classLevel=<%= encodeURIComponent(classLevel) %>&term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>&arm=<%= encodeURIComponent(arm) %>"
+          href="/staff/scores/<%= subject._id %>/print-ca?classLevel=<%= encodeURIComponent(classLevel) %>&sessionPeriod=<%= encodeURIComponent(selectedPeriod) %>&arm=<%= encodeURIComponent(arm) %>"
           class="btn btn--gold"
           target="_blank"
           rel="noopener"
@@ -30,18 +30,12 @@
       <input type="hidden" name="classLevel" value="<%= classLevel %>">
       <div class="admin-form-grid">
         <div class="form-group">
-          <label for="term">Term</label>
-          <select id="term" name="term">
-            <% ['First Term', 'Second Term', 'Third Term'].forEach(function(t) { %>
-              <option value="<%= t %>"<%= term === t ? ' selected' : '' %>><%= t %></option>
-            <% }); %>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="session">Session</label>
-          <select id="session" name="session" required>
-            <% activeSessions.forEach(function(s) { %>
-              <option value="<%= s.name %>"<%= session === s.name ? ' selected' : '' %>><%= s.name %></option>
+          <label for="sessionPeriod">Active Session *</label>
+          <select id="sessionPeriod" name="sessionPeriod" required>
+            <% activeSessions.forEach(function(s) {
+              const period = s.name + '||' + s.term;
+            %>
+              <option value="<%= period %>"<%= selectedPeriod === period ? ' selected' : '' %>><%= s.name %> — <%= s.term %></option>
             <% }); %>
           </select>
         </div>
@@ -63,7 +57,7 @@
         <% availableArms.forEach(function(a) { %>
           <% if (a !== arm) { %>
             <a
-              href="/staff/scores/<%= subject._id %>/print-ca?classLevel=<%= encodeURIComponent(classLevel) %>&term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>&arm=<%= encodeURIComponent(a) %>"
+              href="/staff/scores/<%= subject._id %>/print-ca?classLevel=<%= encodeURIComponent(classLevel) %>&sessionPeriod=<%= encodeURIComponent(selectedPeriod) %>&arm=<%= encodeURIComponent(a) %>"
               class="btn btn--outline btn--sm"
               target="_blank"
               rel="noopener"

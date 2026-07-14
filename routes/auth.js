@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Result = require('../models/Result');
+const AcademicSession = require('../models/AcademicSession');
 const { buildStudentResultView } = require('../utils/resultPrintHelpers');
-
-const TERM_ORDER = ['First Term', 'Second Term', 'Third Term'];
-
-function orderTerms(terms) {
-  return TERM_ORDER.filter((term) => terms.includes(term));
-}
+const {
+  getStudentSessionOptions,
+  parseSessionPeriod,
+  sessionPeriodKey
+} = require('../utils/sessionHelpers');
 
 router.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/results/dashboard');
@@ -47,15 +47,16 @@ router.get('/dashboard', async (req, res) => {
       return res.redirect('/results/login');
     }
 
-    const term = req.query.term?.trim() || '';
-    const session = req.query.session?.trim() || '';
+    const period = req.query.period?.trim() || '';
+    let term = req.query.term?.trim() || '';
+    let session = req.query.session?.trim() || '';
 
-    const allResults = await Result.find({ student: user._id })
-      .populate('subject', 'name code')
-      .sort('subject');
+    if (period) {
+      ({ session, term } = parseSessionPeriod(period));
+    }
 
-    const availableSessions = [...new Set(allResults.map((r) => r.session).filter(Boolean))].sort();
-    const availableTerms = orderTerms([...new Set(allResults.map((r) => r.term).filter(Boolean))]);
+    const sessionOptions = await getStudentSessionOptions(AcademicSession, Result, user._id);
+    const selectedPeriod = session && term ? sessionPeriodKey(session, term) : '';
 
     const hasSelection = Boolean(term && session);
     let resultView = null;
@@ -69,8 +70,8 @@ router.get('/dashboard', async (req, res) => {
       user,
       term,
       session,
-      availableTerms,
-      availableSessions,
+      sessionOptions,
+      selectedPeriod,
       hasSelection,
       canPrint: hasSelection,
       resultView
@@ -84,8 +85,14 @@ router.get('/print', async (req, res, next) => {
   if (!req.session.user) return res.redirect('/results/login');
 
   try {
-    const term = req.query.term?.trim();
-    const session = req.query.session?.trim();
+    let term = req.query.term?.trim() || '';
+    let session = req.query.session?.trim() || '';
+    const period = req.query.period?.trim() || '';
+
+    if (period) {
+      ({ session, term } = parseSessionPeriod(period));
+    }
+
     if (!term || !session) {
       return res.redirect('/results/dashboard');
     }
