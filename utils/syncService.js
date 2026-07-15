@@ -360,6 +360,14 @@ function sessionRecordKey(doc) {
   return `${doc.name}||${doc.term || 'First Term'}`;
 }
 
+function eventRecordKey(doc) {
+  return `${doc.title}||${new Date(doc.eventDate).toISOString()}`;
+}
+
+function newsRecordKey(doc) {
+  return `${doc.title}||${new Date(doc.publishedAt).toISOString()}`;
+}
+
 function getUniqueFilter(doc, config) {
   if (config.compoundUniqueKeys?.length) {
     const filter = {};
@@ -454,6 +462,41 @@ async function syncAcademicSessions(localCol, remoteCol, config, idMaps) {
 
   stats.deleted = await syncSessionDeletions(localCol, remoteCol);
   return stats;
+}
+
+async function syncContentCollection(localCol, remoteCol, config, recordKeyFn) {
+  const stats = { created: 0, updated: 0, skipped: 0, deleted: 0 };
+  const localDocs = await localCol.find().toArray();
+  const localKeys = new Set();
+
+  for (const doc of localDocs) {
+    localKeys.add(recordKeyFn(doc));
+    const uniqueFilter = getUniqueFilter(doc, config);
+    const payload = { ...doc };
+    delete payload._id;
+
+    const result = await remoteCol.updateOne(uniqueFilter, { $set: payload }, { upsert: true });
+    if (result.upsertedCount > 0) stats.created += 1;
+    else stats.updated += 1;
+  }
+
+  const remoteDocs = await remoteCol.find().toArray();
+  for (const doc of remoteDocs) {
+    if (!localKeys.has(recordKeyFn(doc))) {
+      await remoteCol.deleteOne({ _id: doc._id });
+      stats.deleted += 1;
+    }
+  }
+
+  return stats;
+}
+
+async function countRemoteContentDeletions(localCol, remoteCol, recordKeyFn) {
+  const localKeys = new Set(
+    (await localCol.find().toArray()).map(recordKeyFn)
+  );
+  const remoteDocs = await remoteCol.find().toArray();
+  return remoteDocs.filter((doc) => !localKeys.has(recordKeyFn(doc))).length;
 }
 
 async function ensureRemoteSessionIndexes(remoteConn) {
@@ -653,6 +696,30 @@ async function getSyncPreview() {
         continue;
       }
 
+      if (name === 'events') {
+        const localCol = localConn.collection(name);
+        const remoteCol = remoteConn.collection(name);
+        const localDocs = await localCol.find().toArray();
+        counts[name] = {
+          created: 0,
+          updated: localDocs.length,
+          deleted: await countRemoteContentDeletions(localCol, remoteCol, eventRecordKey)
+        };
+        continue;
+      }
+
+      if (name === 'news') {
+        const localCol = localConn.collection(name);
+        const remoteCol = remoteConn.collection(name);
+        const localDocs = await localCol.find().toArray();
+        counts[name] = {
+          created: 0,
+          updated: localDocs.length,
+          deleted: await countRemoteContentDeletions(localCol, remoteCol, newsRecordKey)
+        };
+        continue;
+      }
+
       counts[name] = await countPendingForCollection(
         localConn.collection(name),
         remoteConn.collection(name),
@@ -787,20 +854,20 @@ async function runSync(onProgress) {
 
     step = 6;
     report(`Syncing ${SYNC_STEP_LABELS.events}...`, { collection: 'events' });
-    results.events = await syncSimpleCollection(
+    results.events = await syncContentCollection(
       localConn.collection('events'),
       remoteConn.collection('events'),
       COLLECTIONS.events,
-      idMaps
+      eventRecordKey
     );
 
     step = 7;
     report(`Syncing ${SYNC_STEP_LABELS.news}...`, { collection: 'news' });
-    results.news = await syncSimpleCollection(
+    results.news = await syncContentCollection(
       localConn.collection('news'),
       remoteConn.collection('news'),
       COLLECTIONS.news,
-      idMaps
+      newsRecordKey
     );
 
     step = 8;
