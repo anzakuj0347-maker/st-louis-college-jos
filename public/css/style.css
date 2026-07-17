@@ -30,9 +30,20 @@ body {
   background: var(--white);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
-img { max-width: 100%; height: auto; display: block; }
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+video, svg {
+  max-width: 100%;
+  height: auto;
+}
 
 a { color: var(--msm-red); text-decoration: none; transition: color var(--transition); }
 a:hover { color: var(--msm-red-dark); }
@@ -738,18 +749,22 @@ a:hover { color: var(--msm-red-dark); }
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
   width: 100%;
+  max-width: 100%;
   padding: 0.85rem 1rem;
   border: 1px solid var(--border);
   font-family: inherit;
   font-size: 1rem;
   transition: border-color var(--transition);
   background: var(--white);
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--msm-red);
 }
@@ -1543,14 +1558,19 @@ a:hover { color: var(--msm-red-dark); }
 }
 
 .ca-sheet-table {
-  min-width: 1100px;
   font-size: 0.88rem;
 }
 
-.ca-sheet-table th,
-.ca-sheet-table td {
-  white-space: nowrap;
-  vertical-align: middle;
+@media (min-width: 769px) {
+  .ca-sheet-table {
+    min-width: 1100px;
+  }
+
+  .ca-sheet-table th,
+  .ca-sheet-table td {
+    white-space: nowrap;
+    vertical-align: middle;
+  }
 }
 
 .ca-score-input {
@@ -2256,74 +2276,24 @@ html {
     display: block;
   }
 
-  .admin-table-wrap:not(.ca-sheet-wrap) {
-    overflow-x: visible;
+  .admin-table-wrap,
+  .ca-sheet-wrap {
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border: none;
-    border-radius: 0;
-    background: none;
+    max-width: 100%;
   }
 
   .admin-table-wrap:not(.ca-sheet-wrap) .admin-table {
-    min-width: 0;
-    width: 100%;
+    min-width: 560px;
   }
 
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+  .ca-sheet-table {
+    min-width: 1100px;
   }
 
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table tbody tr {
-    display: block;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  }
-
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table tbody tr:last-child {
-    margin-bottom: 0;
-  }
-
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table tbody td {
-    display: grid;
-    grid-template-columns: minmax(88px, 34%) 1fr;
-    gap: 0.35rem 0.75rem;
-    align-items: start;
-    padding: 0.45rem 0;
-    border: none;
-    white-space: normal;
-    text-align: left;
-  }
-
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table tbody td::before {
-    content: attr(data-label);
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--royal-blue);
-  }
-
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table tbody td[data-label="Actions"] {
-    grid-template-columns: 1fr;
-    padding-top: 0.65rem;
-    margin-top: 0.35rem;
-    border-top: 1px dashed var(--border);
-  }
-
-  .admin-table-wrap:not(.ca-sheet-wrap) .admin-table tbody td[data-label="Actions"]::before {
-    margin-bottom: 0.25rem;
+  .ca-sheet-table .ca-score-input {
+    min-height: 44px;
+    font-size: 1rem;
   }
 
   .admin-actions {
@@ -2338,80 +2308,11 @@ html {
     margin-left: 0;
   }
 
-  .ca-sheet-wrap {
-    overflow-x: visible;
-    border: none;
-    background: none;
-  }
-
-  .ca-sheet-table {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .ca-sheet-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .ca-sheet-table tbody tr {
-    display: block;
-    padding: 1rem;
-    margin-bottom: 0.85rem;
-    background: var(--off-white);
-    border: 1px solid rgba(0, 61, 165, 0.15);
-    border-radius: 8px;
-  }
-
-  .ca-sheet-table tbody td {
-    display: grid;
-    grid-template-columns: minmax(100px, 42%) 1fr;
-    gap: 0.35rem 0.65rem;
-    align-items: center;
-    padding: 0.4rem 0;
-    border: none;
-    white-space: normal;
-  }
-
-  .ca-sheet-table tbody td::before {
-    content: attr(data-label);
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--royal-blue);
-    line-height: 1.3;
-  }
-
-  .ca-sheet-table .ca-score-input {
-    width: 100%;
-    max-width: none;
-    min-height: 44px;
-    font-size: 1rem;
-  }
-
-  .ca-sheet-table tbody td:first-child {
-    font-weight: 700;
-    color: var(--royal-blue);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.65rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .ca-sheet-table tbody td:nth-child(2),
-  .ca-sheet-table tbody td:nth-child(3) {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(88px, 28%) 1fr;
-  }
-
   .student-terminal-report--embedded {
     padding: 0;
     max-width: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .student-terminal-report--embedded .print-ca-header {
@@ -2424,62 +2325,7 @@ html {
   }
 
   .student-terminal-report--embedded .print-data-table {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .student-terminal-report--embedded .print-data-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .student-terminal-report--embedded .print-data-table tbody tr {
-    display: block;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--off-white);
-  }
-
-  .student-terminal-report--embedded .print-data-table tbody td {
-    display: grid;
-    grid-template-columns: minmax(92px, 38%) 1fr;
-    gap: 0.3rem 0.65rem;
-    padding: 0.35rem 0;
-    border: none;
-    text-align: left;
-    white-space: normal;
-  }
-
-  .student-terminal-report--embedded .print-data-table tbody td::before {
-    content: attr(data-label);
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--royal-blue);
-  }
-
-  .student-terminal-report--embedded .print-data-table tbody td:first-child {
-    font-weight: 700;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .student-terminal-report--embedded .print-data-table tbody td:nth-child(2) {
-    grid-column: 1 / -1;
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--msm-black);
+    min-width: 960px;
   }
 
   .student-terminal-report--embedded .print-summary-grid {
@@ -2585,5 +2431,354 @@ html {
   .sync-action-panel .btn--sync {
     width: 100%;
     min-width: 0;
+  }
+}
+
+/* ===== FULL-PAGE MOBILE (all pages) ===== */
+@media screen and (max-width: 768px) {
+  html {
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    box-sizing: border-box;
+  }
+
+  .nav-link {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .header-utils {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .hero-section {
+    overflow: hidden;
+  }
+
+  .hero-nav--prev {
+    left: 0.35rem;
+  }
+
+  .hero-nav--next {
+    right: 0.35rem;
+  }
+
+  .hero-caption {
+    bottom: 18%;
+  }
+
+  .intro-section,
+  .events-section,
+  .news-section,
+  .programs-section {
+    padding: 2.75rem 0;
+  }
+
+  .events-grid,
+  .news-grid,
+  .programs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .program-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .page-content {
+    padding: 2rem 0 2.75rem;
+  }
+
+  .page-hero {
+    padding: 2.25rem 0;
+  }
+
+  .page-hero--compact {
+    padding: 1.75rem 0;
+  }
+
+  .page-hero h1,
+  .page-hero p {
+    overflow-wrap: anywhere;
+  }
+
+  .content-body {
+    max-width: 100%;
+  }
+
+  .content-body img,
+  .content-body iframe,
+  .content-body video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .content-body pre,
+  .content-body table {
+    max-width: 100%;
+  }
+
+  .content-body pre {
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .content-body table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-container,
+  .auth-form,
+  .contact-form {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contact-info h2 {
+    font-size: 1.45rem;
+  }
+
+  .admin-form input,
+  .admin-form select,
+  .admin-form textarea,
+  .admin-form input[type="datetime-local"],
+  .admin-form input[type="date"],
+  .admin-form input[type="time"],
+  .admin-form input[type="number"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .admin-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-form-actions .btn,
+  .dashboard-actions .btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .dashboard-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .print-only {
+    max-width: 100%;
+    width: 100%;
+    padding: 1rem;
+    margin: 0;
+  }
+
+  .print-toolbar,
+  .password-print-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    padding: 1rem;
+  }
+
+  .print-toolbar p,
+  .password-print-toolbar p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .print-toolbar .btn,
+  .password-print-toolbar .btn {
+    width: 100%;
+  }
+
+  .print-ca-header-left,
+  .print-result-header-left {
+    flex-wrap: wrap;
+  }
+
+  .print-meta-table {
+    width: 100%;
+  }
+
+  .print-meta-table tbody,
+  .print-meta-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .print-meta-table tr {
+    display: grid;
+    grid-template-columns: minmax(88px, 34%) 1fr;
+    gap: 0.25rem 0.65rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .print-meta-table th {
+    white-space: normal;
+  }
+
+  .print-ca-sheet,
+  .student-terminal-report {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .print-ca-sheet .print-data-table,
+  .print-only .print-data-table {
+    min-width: 960px;
+  }
+
+  .password-print-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    height: auto;
+    padding: 0;
+  }
+
+  .password-card {
+    width: 100%;
+  }
+
+  .password-card-row {
+    flex-wrap: wrap;
+  }
+
+  .cookie-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .cookie-banner .btn {
+    width: 100%;
+  }
+
+  .footer-bottom {
+    padding: 1rem 0;
+    font-size: 0.78rem;
+  }
+
+  .site-footer {
+    overflow: hidden;
+  }
+
+  .btn {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .alert {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .container {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+
+  .header-top-inner {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto auto;
+  }
+
+  .logo-link {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .nav-toggle {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .school-name {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .header-utils {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: stretch;
+    justify-content: center;
+    padding-top: 0.35rem;
+  }
+
+  .util-divider {
+    display: none;
+  }
+
+  .hero-title {
+    font-size: 1.65rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .section-title {
+    font-size: 1.55rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .section-lead {
+    margin: -1rem 0 1.75rem;
+    font-size: 0.95rem;
+  }
+
+  .news-card,
+  .event-card {
+    padding: 1rem;
+  }
+
+  .admin-panel {
+    padding: 1rem;
+  }
+
+  .press-club-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .press-club-nav-link {
+    border-bottom: none;
+    border-left: 3px solid transparent;
+  }
+
+  .press-club-nav-link.active {
+    border-bottom: none;
+    border-left-color: var(--royal-blue);
+  }
+
+  .press-club-logout-form {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .press-club-logout-form .btn {
+    width: 100%;
   }
 }

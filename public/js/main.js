@@ -58,34 +58,31 @@
     });
   }
 
-  // Responsive table labels for card layout on small screens
-  function enhanceResponsiveTables() {
-    document.querySelectorAll('.admin-table, .ca-sheet-table, .print-result-table').forEach((table) => {
-      if (table.dataset.mobileEnhanced) return;
-      table.dataset.mobileEnhanced = 'true';
+  function addTableScrollHints() {
+    if (window.innerWidth > 768) return;
 
-      const headers = Array.from(table.querySelectorAll('thead th')).map((th) => th.textContent.trim());
-      table.querySelectorAll('tbody tr').forEach((row) => {
-        Array.from(row.cells).forEach((cell, index) => {
-          if (headers[index]) cell.setAttribute('data-label', headers[index]);
-        });
-      });
-    });
-
-    document.querySelectorAll('.admin-table-wrap:not(.ca-sheet-wrap)').forEach((wrap) => {
-      const table = wrap.querySelector('.admin-table');
-      if (!table) return;
-      let hint = wrap.querySelector('.table-scroll-hint');
-      if (!hint) {
-        hint = document.createElement('p');
-        hint.className = 'table-scroll-hint table-scroll-hint--show';
-        hint.textContent = 'Records are shown as cards on mobile for easier reading.';
-        wrap.parentNode.insertBefore(hint, wrap);
+    document.querySelectorAll(
+      '.admin-table-wrap, .ca-sheet-wrap, .student-terminal-report--embedded, .print-ca-sheet'
+    ).forEach((wrap) => {
+      if (!wrap.querySelector('table')) return;
+      if (wrap.previousElementSibling && wrap.previousElementSibling.classList.contains('table-scroll-hint')) {
+        return;
       }
+
+      const hint = document.createElement('p');
+      hint.className = 'table-scroll-hint table-scroll-hint--show';
+      hint.textContent = 'Swipe sideways to see all columns.';
+      wrap.parentNode.insertBefore(hint, wrap);
     });
   }
 
-  enhanceResponsiveTables();
+  addTableScrollHints();
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(addTableScrollHints, 150);
+  });
 
   // Hero carousel
   const slides = document.querySelectorAll('.hero-slide');
