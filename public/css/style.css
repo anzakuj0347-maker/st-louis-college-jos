@@ -893,6 +893,7 @@ a:hover { color: var(--msm-red-dark); }
     grid-row: 2;
     font-size: 1.2rem;
     padding: 0.25rem 0 0.5rem;
+    white-space: normal;
   }
 
   .header-utils {
@@ -1095,6 +1096,10 @@ a:hover { color: var(--msm-red-dark); }
 
 .admin-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .admin-table th {
@@ -1562,6 +1567,32 @@ a:hover { color: var(--msm-red-dark); }
 }
 
 @media (min-width: 769px) {
+  .admin-sidebar-fab,
+  .admin-sidebar-backdrop,
+  .admin-sidebar-close {
+    display: none !important;
+  }
+
+  .admin-sidebar {
+    position: sticky;
+    transform: none !important;
+    width: auto;
+    overflow-y: visible;
+    box-shadow: none;
+  }
+
+  .admin-sidebar-top {
+    display: block;
+    padding-right: 0;
+  }
+
+  .admin-sidebar-label {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+  }
+}
+
+@media (min-width: 769px) {
   .ca-sheet-table {
     min-width: 1100px;
   }
@@ -1993,6 +2024,22 @@ a:hover { color: var(--msm-red-dark); }
     display: none !important;
   }
 
+  .admin-sidebar-fab,
+  .admin-sidebar-backdrop {
+    display: none !important;
+  }
+
+  .print-table-wrap,
+  .admin-table-wrap {
+    overflow: visible;
+    max-width: none;
+  }
+
+  .print-table-wrap .print-data-table,
+  .admin-table-wrap .print-data-table {
+    min-width: 0;
+  }
+
   .print-data-table {
     page-break-inside: avoid;
   }
@@ -2026,37 +2073,62 @@ html {
   gap: 0.65rem;
 }
 
-.admin-sidebar-toggle {
+.admin-sidebar-fab {
   display: none;
-  width: 100%;
+  position: fixed;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  z-index: 999;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--royal-blue);
+  color: var(--white);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.admin-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1098;
+  background: rgba(17, 17, 17, 0.45);
+}
+
+body.admin-sidebar-open .admin-sidebar-backdrop {
+  display: block;
+}
+
+.admin-sidebar-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.85rem 1.25rem;
-  background: var(--white);
-  border: none;
-  border-bottom: 1px solid var(--border);
-  font-family: inherit;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--royal-blue);
-  cursor: pointer;
-  text-align: left;
+  padding-right: 0.5rem;
 }
 
-.admin-sidebar-toggle-icon {
+.admin-sidebar-close {
+  display: none;
   flex-shrink: 0;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-right: 2px solid var(--royal-blue);
-  border-bottom: 2px solid var(--royal-blue);
-  transform: rotate(45deg);
-  transition: transform var(--transition);
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--royal-blue);
+  font-size: 1.65rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.admin-sidebar.is-open .admin-sidebar-toggle-icon {
-  transform: rotate(-135deg);
-  margin-top: 0.2rem;
+.admin-sidebar-close:hover {
+  background: var(--white);
 }
 
 .table-scroll-hint {
@@ -2216,22 +2288,49 @@ html {
     min-height: 40px;
   }
 
-  .admin-sidebar {
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .admin-sidebar-toggle {
+  .admin-sidebar-fab {
     display: flex;
   }
 
+  body.admin-sidebar-open {
+    overflow: hidden;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 88vw);
+    z-index: 1099;
+    margin: 0;
+    padding: 0;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .admin-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .admin-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .admin-sidebar-body {
-    display: none;
+    display: block;
     padding-bottom: 0.5rem;
   }
 
-  .admin-sidebar.is-open .admin-sidebar-body {
-    display: block;
+  .admin-sidebar-label {
+    padding-top: 0.75rem;
+    margin: 0;
+    border-bottom: none;
   }
 
   .press-club-layout {
@@ -2264,12 +2363,25 @@ html {
     margin-left: auto;
   }
 
-  .admin-sidebar-label {
-    padding-top: 0.75rem;
-  }
-
   .admin-logout-form {
     padding-bottom: 1rem;
+  }
+
+  .admin-main {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+    padding-bottom: 4.5rem;
+  }
+
+  .admin-layout {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .admin-panel {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .table-scroll-hint--show {
@@ -2277,10 +2389,13 @@ html {
   }
 
   .admin-table-wrap,
-  .ca-sheet-wrap {
+  .ca-sheet-wrap,
+  .print-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
+    width: 100%;
+    overscroll-behavior-x: contain;
   }
 
   .admin-table-wrap:not(.ca-sheet-wrap) .admin-table {
@@ -2310,9 +2425,8 @@ html {
 
   .student-terminal-report--embedded {
     padding: 0;
-    max-width: none;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .student-terminal-report--embedded .print-ca-header {
@@ -2324,7 +2438,8 @@ html {
     width: 100%;
   }
 
-  .student-terminal-report--embedded .print-data-table {
+  .student-terminal-report--embedded .print-data-table,
+  .print-table-wrap .print-data-table {
     min-width: 960px;
   }
 
@@ -2498,6 +2613,8 @@ html {
 
   .page-content {
     padding: 2rem 0 2.75rem;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   .page-hero {
@@ -2634,15 +2751,43 @@ html {
     white-space: normal;
   }
 
+  .site-header {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .admin-form,
+  .admin-form-grid,
+  .press-club-main,
+  .press-club-layout,
+  .sync-panel,
+  .dashboard-actions,
+  .staff-score-filters {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .press-club-layout {
+    overflow-x: clip;
+  }
+
   .print-ca-sheet,
   .student-terminal-report {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .print-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
+    width: 100%;
+    overscroll-behavior-x: contain;
   }
 
   .print-ca-sheet .print-data-table,
-  .print-only .print-data-table {
+  .print-only .print-data-table,
+  .print-table-wrap .print-data-table {
     min-width: 960px;
   }
 
