@@ -7,7 +7,7 @@ const { buildStudentResultView } = require('../utils/resultPrintHelpers');
 const {
   buildResultQrForStudent,
   buildResultQrBuffer,
-  buildResultQrImageUrl,
+  buildResultContentFingerprint,
   buildResultQrText,
   buildResultVerifyUrl,
   getBaseUrl,
@@ -72,7 +72,7 @@ router.get('/dashboard', async (req, res, next) => {
 
     if (hasSelection) {
       resultView = await buildStudentResultView(Result, User, user, { term, session });
-      resultView.qr = await buildResultQrForStudent(req, user.studentId, session, term);
+      resultView.qr = await buildResultQrForStudent(req, resultView);
     }
 
     res.render('auth/dashboard', {
@@ -96,6 +96,7 @@ router.get('/qr', async (req, res, next) => {
     const term = req.query.term?.trim() || '';
     const sessionName = req.query.session?.trim() || '';
     const token = req.query.v?.trim() || '';
+    const requestedStudentId = req.query.studentId?.trim() || '';
     let user;
 
     if (!term || !sessionName) {
@@ -106,12 +107,14 @@ router.get('/qr', async (req, res, next) => {
       user = await User.findById(req.session.user.id)
         .select('studentId firstName middleName lastName classLevel arm');
       if (!user) return res.status(401).end();
-    } else {
-      const studentId = req.query.studentId?.trim() || '';
-      if (!studentId || !isValidResultVerifyToken(studentId, sessionName, term, token)) {
+      if (requestedStudentId && requestedStudentId !== user.studentId) {
         return res.status(403).end();
       }
-      user = await User.findOne({ studentId })
+    } else {
+      if (!requestedStudentId || !isValidResultVerifyToken(requestedStudentId, sessionName, term, token)) {
+        return res.status(403).end();
+      }
+      user = await User.findOne({ studentId: requestedStudentId })
         .select('studentId firstName middleName lastName classLevel arm');
       if (!user) return res.status(404).end();
     }
@@ -125,10 +128,18 @@ router.get('/qr', async (req, res, next) => {
       return res.status(404).end();
     }
 
+    const fingerprint = buildResultContentFingerprint(resultView);
+    const requestedFingerprint = req.query.fp?.trim() || '';
+    if (requestedFingerprint && requestedFingerprint !== fingerprint) {
+      return res.status(409).end();
+    }
+
     const verifyUrl = buildResultVerifyUrl(getBaseUrl(req), user.studentId, sessionName, term);
     const qrText = buildResultQrText({ ...resultView, verifyUrl });
     const buffer = await buildResultQrBuffer(qrText);
-    res.set('Cache-Control', 'private, max-age=3600');
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.type('png').send(buffer);
   } catch (err) {
     next(err);
@@ -159,7 +170,7 @@ router.get('/print', async (req, res, next) => {
     }
 
     const resultView = await buildStudentResultView(Result, User, user, { term, session });
-    resultView.qr = await buildResultQrForStudent(req, user.studentId, session, term);
+    resultView.qr = await buildResultQrForStudent(req, resultView);
 
     res.render('auth/print-result', {
       title: 'Print Student Result',

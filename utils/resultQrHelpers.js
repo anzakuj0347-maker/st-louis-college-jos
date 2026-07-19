@@ -6,7 +6,8 @@ function getBaseUrl(req) {
     return process.env.APP_URL.replace(/\/$/, '');
   }
   if (req) {
-    return `${req.protocol}://${req.get('host')}`;
+    const protocol = req.get('x-forwarded-proto')?.split(',')[0]?.trim() || req.protocol;
+    return `${protocol}://${req.get('host')}`;
   }
   return 'http://localhost:3000';
 }
@@ -34,17 +35,45 @@ function buildResultVerifyUrl(baseUrl, studentId, session, term) {
   return `${baseUrl}/results/verify?${params.toString()}`;
 }
 
-function buildResultQrImageUrl({ term, session, studentId, token }) {
+function buildResultContentFingerprint(resultView) {
+  const payload = JSON.stringify({
+    studentId: resultView.student.studentId,
+    term: resultView.term,
+    session: resultView.session,
+    arm: resultView.student.arm || '',
+    classLevel: resultView.classLevel,
+    rows: resultView.subjectResults.map((row) => [
+      row.subject,
+      row.firstAssignment,
+      row.secondAssignment,
+      row.firstTest,
+      row.secondTest,
+      row.exam,
+      row.total,
+      row.average,
+      row.position,
+      row.grade,
+      row.remark
+    ]),
+    summary: resultView.summary
+  });
+  return crypto.createHash('sha256').update(payload).digest('hex').slice(0, 16);
+}
+
+function buildResultQrImageUrl({ term, session, studentId, token, fingerprint }) {
   const params = new URLSearchParams({ term, session });
-  if (studentId && token) {
-    params.set('studentId', studentId);
-    params.set('v', token);
-  }
+  if (studentId) params.set('studentId', studentId);
+  if (token) params.set('v', token);
+  if (fingerprint) params.set('fp', fingerprint);
   return `/results/qr?${params.toString()}`;
 }
 
 function formatStudentName(student) {
   return [student.firstName, student.middleName, student.lastName].filter(Boolean).join(' ');
+}
+
+function formatScore(value) {
+  return value !== '' && value !== undefined && value !== null ? value : '—';
 }
 
 function buildResultQrText({ student, classLevel, term, session, subjectResults, summary, verifyUrl }) {
@@ -64,7 +93,10 @@ function buildResultQrText({ student, classLevel, term, session, subjectResults,
   subjectResults.forEach((row, index) => {
     lines.push(
       `${index + 1}. ${row.subject}`,
-      `   Total: ${row.total || '—'} | Grade: ${row.grade || '—'} | Remark: ${row.remark || '—'}`
+      `   1st Asgn: ${formatScore(row.firstAssignment)} | 2nd Asgn: ${formatScore(row.secondAssignment)}`,
+      `   1st Test: ${formatScore(row.firstTest)} | 2nd Test: ${formatScore(row.secondTest)} | Exam: ${formatScore(row.exam)}`,
+      `   Total: ${formatScore(row.total)} | Avg: ${formatScore(row.average)} | Pos: ${formatScore(row.position)} | Grade: ${formatScore(row.grade)}`,
+      `   Remark: ${formatScore(row.remark)}`
     );
   });
 
@@ -83,6 +115,18 @@ function buildResultQrText({ student, classLevel, term, session, subjectResults,
   return lines.join('\n');
 }
 
+async function buildResultQrDataUrl(text) {
+  return QRCode.toDataURL(text, {
+    errorCorrectionLevel: 'L',
+    margin: 1,
+    width: 280,
+    color: {
+      dark: '#003da5',
+      light: '#ffffff'
+    }
+  });
+}
+
 async function buildResultQrBuffer(text) {
   return QRCode.toBuffer(text, {
     errorCorrectionLevel: 'L',
@@ -95,10 +139,19 @@ async function buildResultQrBuffer(text) {
   });
 }
 
-function buildResultQrForStudent(req, studentId, session, term) {
-  const verifyUrl = buildResultVerifyUrl(getBaseUrl(req), studentId, session, term);
-  const qrImageUrl = buildResultQrImageUrl({ term, session });
-  return { verifyUrl, qrImageUrl };
+async function buildResultQrForStudent(req, resultView) {
+  const { student, term, session } = resultView;
+  const verifyUrl = buildResultVerifyUrl(getBaseUrl(req), student.studentId, session, term);
+  const qrText = buildResultQrText({ ...resultView, verifyUrl });
+  const qrImageUrl = await buildResultQrDataUrl(qrText);
+  const fingerprint = buildResultContentFingerprint(resultView);
+
+  return {
+    verifyUrl,
+    qrImageUrl,
+    fingerprint,
+    qrText
+  };
 }
 
 module.exports = {
@@ -106,8 +159,10 @@ module.exports = {
   buildResultVerifyToken,
   isValidResultVerifyToken,
   buildResultVerifyUrl,
+  buildResultContentFingerprint,
   buildResultQrImageUrl,
   buildResultQrText,
+  buildResultQrDataUrl,
   buildResultQrBuffer,
   buildResultQrForStudent
 };

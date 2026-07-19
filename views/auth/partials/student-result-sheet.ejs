@@ -90,12 +90,12 @@
     <% if (typeof showQr === 'undefined' || showQr) { %>
     <div class="print-result-qr">
       <img
-        src="<%= typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : ('/results/qr?term=' + encodeURIComponent(term) + '&session=' + encodeURIComponent(session)) %>"
+        src="<%= typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : '' %>"
         class="print-result-qr-code"
         alt="Scan to view result details"
         width="132"
         height="132"
-        loading="lazy"
+        loading="eager"
       >
       <p class="print-result-qr-caption">Scan to view result details</p>
     </div>
