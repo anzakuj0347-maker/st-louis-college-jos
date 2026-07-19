@@ -64,25 +64,42 @@
 </table>
 </div>
 
-<section class="print-result-summary">
-  <h2>Result Summary</h2>
-  <div class="print-summary-grid">
-    <div class="print-summary-item">
-      <span class="print-summary-label">Subjects Offered</span>
-      <strong><%= summary.subjectsOffered %></strong>
+<section class="print-result-summary print-result-summary--compact">
+  <div class="print-result-summary-row">
+    <div class="print-result-summary-main">
+      <h2>Result Summary</h2>
+      <div class="print-summary-grid print-summary-grid--compact">
+        <div class="print-summary-item">
+          <span class="print-summary-label">Subjects</span>
+          <strong><%= summary.subjectsOffered %></strong>
+        </div>
+        <div class="print-summary-item">
+          <span class="print-summary-label">Credits</span>
+          <strong><%= summary.numberOfCredits %></strong>
+        </div>
+        <div class="print-summary-item">
+          <span class="print-summary-label">Class Avg</span>
+          <strong><%= summary.classAverage || '—' %></strong>
+        </div>
+      </div>
+      <div class="print-principal-comment print-principal-comment--compact">
+        <h3>Principal's Comment</h3>
+        <p><%= summary.principalComment %></p>
+      </div>
     </div>
-    <div class="print-summary-item">
-      <span class="print-summary-label">Number of Credits</span>
-      <strong><%= summary.numberOfCredits %></strong>
+    <% if (typeof showQr === 'undefined' || showQr) { %>
+    <div class="print-result-qr">
+      <img
+        src="<%= typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : ('/results/qr?term=' + encodeURIComponent(term) + '&session=' + encodeURIComponent(session)) %>"
+        class="print-result-qr-code"
+        alt="Scan to view result details"
+        width="132"
+        height="132"
+        loading="lazy"
+      >
+      <p class="print-result-qr-caption">Scan to view result details</p>
     </div>
-    <div class="print-summary-item">
-      <span class="print-summary-label">Class Average</span>
-      <strong><%= summary.classAverage || '—' %></strong>
-    </div>
-  </div>
-  <div class="print-principal-comment">
-    <h3>Principal's Comment</h3>
-    <p><%= summary.principalComment %></p>
+    <% } %>
   </div>
 </section>
 

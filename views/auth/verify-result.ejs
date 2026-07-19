@@ -1,0 +1,39 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Check Result</p>
+    <h1>Result Verification</h1>
+  </div>
+</section>
+
+<section class="page-content page-content--verify-result">
+  <div class="container container--verify-result">
+    <% if (!valid) { %>
+      <div class="alert alert--error"><%= error %></div>
+      <p><a href="/results/login" class="btn btn--outline">Student Login</a></p>
+    <% } else { %>
+      <div class="alert alert--success verify-result-banner">
+        Verified result for <strong><%= student.firstName %> <%= student.lastName %></strong>
+        (<%= student.studentId %>) — <%= term %>, <%= session %>.
+      </div>
+
+      <section class="student-terminal-report student-terminal-report--embedded student-result-verify">
+        <%- include('partials/student-result-sheet', {
+          student,
+          classLevel,
+          term,
+          session,
+          subjectResults,
+          summary,
+          showQr: false,
+          showPrintButton: false
+        }) %>
+      </section>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

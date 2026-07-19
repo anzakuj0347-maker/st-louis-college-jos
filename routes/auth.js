@@ -5,6 +5,15 @@ const Result = require('../models/Result');
 const AcademicSession = require('../models/AcademicSession');
 const { buildStudentResultView } = require('../utils/resultPrintHelpers');
 const {
+  buildResultQrForStudent,
+  buildResultQrBuffer,
+  buildResultQrImageUrl,
+  buildResultQrText,
+  buildResultVerifyUrl,
+  getBaseUrl,
+  isValidResultVerifyToken
+} = require('../utils/resultQrHelpers');
+const {
   getStudentSessionOptions,
   parseSessionPeriod,
   sessionPeriodKey
@@ -38,7 +47,7 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', async (req, res, next) => {
   if (!req.session.user) return res.redirect('/results/login');
   try {
     const user = await User.findById(req.session.user.id);
@@ -63,6 +72,7 @@ router.get('/dashboard', async (req, res) => {
 
     if (hasSelection) {
       resultView = await buildStudentResultView(Result, User, user, { term, session });
+      resultView.qr = await buildResultQrForStudent(req, user.studentId, session, term);
     }
 
     res.render('auth/dashboard', {
@@ -77,7 +87,51 @@ router.get('/dashboard', async (req, res) => {
       resultView
     });
   } catch (err) {
-    res.redirect('/results/login');
+    next(err);
+  }
+});
+
+router.get('/qr', async (req, res, next) => {
+  try {
+    const term = req.query.term?.trim() || '';
+    const sessionName = req.query.session?.trim() || '';
+    const token = req.query.v?.trim() || '';
+    let user;
+
+    if (!term || !sessionName) {
+      return res.status(400).end();
+    }
+
+    if (req.session.user) {
+      user = await User.findById(req.session.user.id)
+        .select('studentId firstName middleName lastName classLevel arm');
+      if (!user) return res.status(401).end();
+    } else {
+      const studentId = req.query.studentId?.trim() || '';
+      if (!studentId || !isValidResultVerifyToken(studentId, sessionName, term, token)) {
+        return res.status(403).end();
+      }
+      user = await User.findOne({ studentId })
+        .select('studentId firstName middleName lastName classLevel arm');
+      if (!user) return res.status(404).end();
+    }
+
+    const resultView = await buildStudentResultView(Result, User, user, {
+      term,
+      session: sessionName
+    });
+
+    if (!resultView.subjectResults.length) {
+      return res.status(404).end();
+    }
+
+    const verifyUrl = buildResultVerifyUrl(getBaseUrl(req), user.studentId, sessionName, term);
+    const qrText = buildResultQrText({ ...resultView, verifyUrl });
+    const buffer = await buildResultQrBuffer(qrText);
+    res.set('Cache-Control', 'private, max-age=3600');
+    res.type('png').send(buffer);
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -105,9 +159,59 @@ router.get('/print', async (req, res, next) => {
     }
 
     const resultView = await buildStudentResultView(Result, User, user, { term, session });
+    resultView.qr = await buildResultQrForStudent(req, user.studentId, session, term);
 
     res.render('auth/print-result', {
       title: 'Print Student Result',
+      ...resultView
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/verify', async (req, res, next) => {
+  try {
+    const studentId = req.query.studentId?.trim() || '';
+    const sessionName = req.query.session?.trim() || '';
+    const term = req.query.term?.trim() || '';
+    const token = req.query.v?.trim() || '';
+
+    if (!isValidResultVerifyToken(studentId, sessionName, term, token)) {
+      return res.status(400).render('auth/verify-result', {
+        title: 'Verify Result',
+        valid: false,
+        error: 'This result link is invalid or has expired.'
+      });
+    }
+
+    const user = await User.findOne({ studentId })
+      .select('studentId firstName middleName lastName classLevel arm');
+    if (!user) {
+      return res.status(404).render('auth/verify-result', {
+        title: 'Verify Result',
+        valid: false,
+        error: 'Student record not found.'
+      });
+    }
+
+    const resultView = await buildStudentResultView(Result, User, user, {
+      term,
+      session: sessionName
+    });
+
+    if (!resultView.subjectResults.length) {
+      return res.render('auth/verify-result', {
+        title: 'Verify Result',
+        valid: false,
+        error: 'No results were found for this student, session, and term.'
+      });
+    }
+
+    res.render('auth/verify-result', {
+      title: 'Verify Result',
+      valid: true,
+      verifiedAt: new Date(),
       ...resultView
     });
   } catch (err) {

@@ -1,4 +1,4 @@
-<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/doc-start', { title: title, bodyClass: 'print-result-page' }) %>
 
 <div class="print-toolbar no-print">
   <p>
@@ -6,10 +6,13 @@
     (<%= student.studentId %>) | <%= classLevel %> Arm <%= student.arm || '—' %>
     | <%= term %> | <%= session %>
   </p>
-  <a href="/results/dashboard?term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>" class="btn btn--outline">Back to Dashboard</a>
+  <div class="print-toolbar-actions">
+    <a href="/results/dashboard?term=<%= encodeURIComponent(term) %>&session=<%= encodeURIComponent(session) %>" class="btn btn--outline">Back to Dashboard</a>
+    <button type="button" class="btn btn--gold" id="printResultBtn">Print Result</button>
+  </div>
 </div>
 
-<section class="print-only print-ca-sheet student-terminal-report">
+<section class="print-only print-ca-sheet student-terminal-report student-terminal-report--print">
   <%- include('partials/student-result-sheet', {
     student,
     classLevel,
@@ -17,9 +20,10 @@
     session,
     subjectResults,
     summary,
-    showPrintButton: true,
-    printAction: 'print'
+    qrImageUrl: qr ? qr.qrImageUrl : '',
+    showPrintButton: false
   }) %>
 </section>
 
+<script src="/js/print-result.js"></script>
 <%- include('../partials/doc-end') %>

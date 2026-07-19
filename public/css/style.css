@@ -1789,6 +1789,40 @@ a:hover { color: var(--msm-red-dark); }
 
 .student-terminal-report--embedded {
   margin-top: 1.5rem;
+  overflow-x: visible;
+}
+
+.student-terminal-report--embedded .print-result-summary-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.student-terminal-report--embedded .print-result-qr {
+  align-self: center;
+  margin-top: 0.5rem;
+}
+
+.page-content--verify-result {
+  padding-top: 1.5rem;
+}
+
+.container--verify-result {
+  width: 100%;
+  max-width: 100%;
+}
+
+.verify-result-banner {
+  margin-bottom: 1.25rem;
+}
+
+.student-result-verify {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  color: #1a1a1a;
+  box-sizing: border-box;
 }
 
 .student-result-actions {
@@ -1813,10 +1847,18 @@ a:hover { color: var(--msm-red-dark); }
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem 1rem;
   padding: 1rem 1.25rem;
   background: #f4f6f9;
   border-bottom: 1px solid rgba(0, 48, 135, 0.12);
+}
+
+.print-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
 }
 
 .ca-print-arms {
@@ -1936,10 +1978,35 @@ a:hover { color: var(--msm-red-dark); }
   background: #fafbfc;
 }
 
+.print-result-summary--compact {
+  margin: 0.85rem 0 1rem;
+  padding: 0.65rem 0.75rem;
+  min-height: 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.print-result-summary-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.print-result-summary-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .print-result-summary h2 {
   margin: 0 0 0.75rem;
   font-size: 0.95rem;
   color: var(--royal-blue, #003087);
+}
+
+.print-result-summary--compact h2 {
+  margin: 0 0 0.45rem;
+  font-size: 0.88rem;
 }
 
 .print-summary-grid {
@@ -1949,10 +2016,25 @@ a:hover { color: var(--msm-red-dark); }
   margin-bottom: 0.85rem;
 }
 
+.print-summary-grid--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem 0.65rem;
+  margin-bottom: 0.45rem;
+}
+
 .print-summary-item {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+}
+
+.print-summary-grid--compact .print-summary-item {
+  gap: 0.05rem;
+}
+
+.print-summary-grid--compact strong {
+  font-size: 0.95rem;
+  line-height: 1.2;
 }
 
 .print-summary-label {
@@ -1960,6 +2042,11 @@ a:hover { color: var(--msm-red-dark); }
   color: #5c6470;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.print-summary-grid--compact .print-summary-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
 }
 
 .print-principal-comment h3 {
@@ -1971,6 +2058,44 @@ a:hover { color: var(--msm-red-dark); }
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.5;
+}
+
+.print-principal-comment--compact h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.78rem;
+}
+
+.print-principal-comment--compact p {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.print-result-qr {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgba(0, 61, 165, 0.18);
+  border-radius: 6px;
+  background: var(--white);
+}
+
+.print-result-qr-code {
+  display: block;
+  width: 132px;
+  height: 132px;
+  object-fit: contain;
+}
+
+.print-result-qr-caption {
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--royal-blue);
+  line-height: 1.25;
+  max-width: 8.5rem;
 }
 
 .print-ca-footer,
@@ -1996,7 +2121,7 @@ a:hover { color: var(--msm-red-dark); }
 @media print {
   @page {
     size: A4 landscape;
-    margin: 10mm;
+    margin: 6mm;
   }
 
   body * {
@@ -2006,8 +2131,29 @@ a:hover { color: var(--msm-red-dark); }
   .print-only,
   .print-only *,
   .student-terminal-report,
-  .student-terminal-report * {
+  .student-terminal-report *,
+  .password-print-only,
+  .password-print-only * {
     visibility: visible;
+  }
+
+  body.print-result-page * {
+    visibility: visible;
+  }
+
+  body.print-result-page .no-print,
+  body.print-result-page .print-toolbar {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.print-result-page .print-only {
+    position: static;
+    left: auto;
+    top: auto;
+    width: 100%;
+    padding: 0;
+    margin: 0;
   }
 
   .print-only,
@@ -2038,6 +2184,125 @@ a:hover { color: var(--msm-red-dark); }
   .print-table-wrap .print-data-table,
   .admin-table-wrap .print-data-table {
     min-width: 0;
+    width: 100%;
+  }
+
+  .student-terminal-report--print {
+    position: static;
+    padding: 0 !important;
+    font-size: 7pt;
+    line-height: 1.2;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  .student-terminal-report--print .print-ca-header {
+    margin-bottom: 2mm;
+    gap: 3mm;
+    align-items: flex-start;
+  }
+
+  .student-terminal-report--print .print-school-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .student-terminal-report--print .print-school-name {
+    font-size: 10pt;
+    line-height: 1.15;
+  }
+
+  .student-terminal-report--print .print-doc-title {
+    font-size: 8pt;
+    margin-top: 1mm;
+  }
+
+  .student-terminal-report--print .print-meta-table th,
+  .student-terminal-report--print .print-meta-table td {
+    padding: 0.5mm 1.5mm;
+    font-size: 6.5pt;
+  }
+
+  .student-terminal-report--print .print-table-wrap {
+    margin: 0 0 2mm;
+  }
+
+  .student-terminal-report--print .print-data-table {
+    font-size: 6pt;
+    margin-bottom: 2mm;
+  }
+
+  .student-terminal-report--print .print-data-table th,
+  .student-terminal-report--print .print-data-table td {
+    padding: 0.6mm 0.8mm;
+    line-height: 1.15;
+  }
+
+  .student-terminal-report--print .print-result-summary--compact {
+    margin: 1.5mm 0;
+    padding: 2mm 2.5mm;
+  }
+
+  .student-terminal-report--print .print-result-summary h2 {
+    margin-bottom: 1mm;
+    font-size: 7.5pt;
+  }
+
+  .student-terminal-report--print .print-summary-grid--compact {
+    gap: 1mm 2mm;
+    margin-bottom: 1mm;
+  }
+
+  .student-terminal-report--print .print-summary-label {
+    font-size: 5.5pt;
+  }
+
+  .student-terminal-report--print .print-summary-grid--compact strong {
+    font-size: 7pt;
+  }
+
+  .student-terminal-report--print .print-principal-comment--compact h3 {
+    font-size: 6.5pt;
+    margin-bottom: 0.5mm;
+  }
+
+  .student-terminal-report--print .print-principal-comment--compact p {
+    font-size: 6pt;
+    line-height: 1.25;
+  }
+
+  .student-terminal-report--print .print-result-summary-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 3mm;
+  }
+
+  .student-terminal-report--print .print-result-qr {
+    padding: 1mm;
+  }
+
+  .student-terminal-report--print .print-result-qr-code {
+    width: 18mm;
+    height: 18mm;
+  }
+
+  .student-terminal-report--print .print-result-qr-caption {
+    font-size: 5pt;
+    margin-top: 0.5mm;
+  }
+
+  .student-terminal-report--print .print-ca-footer {
+    margin-top: 3mm;
+    gap: 6mm;
+  }
+
+  .student-terminal-report--print .print-signature-block {
+    margin-top: 0;
+  }
+
+  .student-terminal-report--print .print-signature-line {
+    margin-top: 8mm;
+    font-size: 6.5pt;
   }
 
   .print-data-table {
@@ -2055,9 +2320,10 @@ a:hover { color: var(--msm-red-dark); }
     break-inside: avoid;
   }
 
-  .password-print-only,
-  .password-print-only * {
-    visibility: visible;
+  .print-result-qr,
+  .print-result-qr-code {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 }
 
@@ -2369,19 +2635,37 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
 
   .admin-main {
     width: 100%;
+    max-width: 100%;
     min-width: 0;
-    overflow-x: clip;
+    overflow-x: visible;
     padding-bottom: 4.5rem;
   }
 
   .admin-layout {
     width: 100%;
-    overflow-x: clip;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    overflow-x: visible;
   }
 
   .admin-panel {
+    width: 100%;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: visible;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .page-content > .container.admin-layout,
+  .page-content > .container.press-club-layout {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .table-scroll-hint--show {
@@ -2396,6 +2680,20 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
     max-width: 100%;
     width: 100%;
     overscroll-behavior-x: contain;
+    box-sizing: border-box;
+  }
+
+  .admin-panel .admin-table-wrap,
+  .admin-panel .ca-sheet-wrap {
+    margin-left: calc(-1 * max(12px, env(safe-area-inset-left)));
+    margin-right: calc(-1 * max(12px, env(safe-area-inset-right)));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .admin-panel .data-table {
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .admin-table-wrap:not(.ca-sheet-wrap) .admin-table {
@@ -2426,7 +2724,7 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
   .student-terminal-report--embedded {
     padding: 0;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: visible;
   }
 
   .student-terminal-report--embedded .print-ca-header {
@@ -2443,8 +2741,27 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
     min-width: 960px;
   }
 
-  .student-terminal-report--embedded .print-summary-grid {
+  .student-terminal-report--embedded .print-summary-grid:not(.print-summary-grid--compact) {
     grid-template-columns: 1fr;
+  }
+
+  .student-terminal-report--embedded .print-summary-grid--compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .print-result-summary-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .print-result-qr {
+    align-self: center;
+    margin-top: 0.15rem;
+  }
+
+  .print-result-qr-code {
+    width: 120px;
+    height: 120px;
   }
 
   .student-terminal-report--embedded .print-ca-footer {
@@ -2475,10 +2792,6 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
 @media (max-width: 480px) {
   html {
     font-size: 15px;
-  }
-
-  .container {
-    width: min(1280px, 90%);
   }
 
   .header-top-inner {
@@ -2615,6 +2928,31 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
     padding: 2rem 0 2.75rem;
     overflow-x: clip;
     max-width: 100%;
+  }
+
+  .page-content:has(.admin-layout),
+  .page-content:has(.press-club-layout) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .page-content > .container.admin-layout,
+  .page-content > .container.press-club-layout {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .press-club-main {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .press-club-nav {
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
   }
 
   .page-hero {
