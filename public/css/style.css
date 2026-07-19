@@ -1222,6 +1222,22 @@ a:hover { color: var(--msm-red-dark); }
   color: var(--text-muted);
 }
 
+.promotion-target-grid {
+  margin-bottom: 1rem;
+}
+
+.promotion-check-col {
+  width: 4.5rem;
+  white-space: nowrap;
+}
+
+.promotion-select-all-label span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .admin-offers-group {
   border: 1px solid var(--border);
   padding: 1rem 1.25rem 1.25rem;

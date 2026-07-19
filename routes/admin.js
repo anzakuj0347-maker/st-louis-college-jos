@@ -975,4 +975,115 @@ router.post('/sync', requireAdmin, async (req, res, next) => {
   }
 });
 
+/* ----- Promotion ----- */
+async function renderPromotionPage(res, data = {}) {
+  const fromClass = data.fromClass || '';
+  const fromArm = data.fromArm || '';
+  let students = [];
+
+  if (fromClass && fromArm) {
+    students = await User.find({ classLevel: fromClass, arm: fromArm })
+      .select('studentId firstName middleName lastName classLevel arm')
+      .sort({ lastName: 1, firstName: 1 });
+  }
+
+  renderAdmin(res, 'admin/promotion', {
+    title: 'Student Promotion',
+    pageTitle: 'Student Promotion',
+    activeSection: 'promotion',
+    classLevels: CLASS_LEVELS,
+    arms: ARMS,
+    fromClass,
+    fromArm,
+    toClass: data.toClass || '',
+    toArm: data.toArm || '',
+    students,
+    error: data.error || null,
+    success: data.success || null
+  });
+}
+
+router.get('/promotion', requireAdmin, async (req, res, next) => {
+  try {
+    await renderPromotionPage(res, {
+      fromClass: req.query.fromClass?.trim() || '',
+      fromArm: req.query.fromArm?.trim() || '',
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/promotion', requireAdmin, async (req, res, next) => {
+  try {
+    const fromClass = req.body.fromClass?.trim() || '';
+    const fromArm = req.body.fromArm?.trim() || '';
+    const toClass = req.body.toClass?.trim() || '';
+    const toArm = req.body.toArm?.trim() || '';
+    const selected = Array.isArray(req.body.students)
+      ? req.body.students
+      : req.body.students
+        ? [req.body.students]
+        : [];
+
+    if (!fromClass || !fromArm || !toClass || !toArm) {
+      return renderPromotionPage(res, {
+        fromClass,
+        fromArm,
+        toClass,
+        toArm,
+        error: 'Select the current class, arm, and promotion destination.'
+      });
+    }
+
+    if (!CLASS_LEVELS.includes(fromClass) || !CLASS_LEVELS.includes(toClass)) {
+      return renderPromotionPage(res, {
+        fromClass,
+        fromArm,
+        error: 'Invalid class level selected.'
+      });
+    }
+
+    if (!ARMS.includes(fromArm) || !ARMS.includes(toArm)) {
+      return renderPromotionPage(res, {
+        fromClass,
+        fromArm,
+        error: 'Invalid arm selected.'
+      });
+    }
+
+    if (fromClass === toClass && fromArm === toArm) {
+      return renderPromotionPage(res, {
+        fromClass,
+        fromArm,
+        toClass,
+        toArm,
+        error: 'Promotion destination must be different from the current class and arm.'
+      });
+    }
+
+    if (!selected.length) {
+      return renderPromotionPage(res, {
+        fromClass,
+        fromArm,
+        toClass,
+        toArm,
+        error: 'Select at least one student to promote.'
+      });
+    }
+
+    const result = await User.updateMany(
+      { _id: { $in: selected }, classLevel: fromClass, arm: fromArm },
+      { $set: { classLevel: toClass, arm: toArm } }
+    );
+
+    const success = `Promoted ${result.modifiedCount} student(s) from ${fromClass} Arm ${fromArm} to ${toClass} Arm ${toArm}.`;
+    res.redirect(`/slc-admin/promotion?fromClass=${encodeURIComponent(fromClass)}&fromArm=${encodeURIComponent(fromArm)}&success=${encodeURIComponent(success)}`);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

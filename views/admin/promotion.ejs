@@ -1,0 +1,190 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+    <p>Promote students from one class and arm to another at the end of a session or term.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Select Current Class</h2>
+        <form class="admin-form" method="GET" action="/slc-admin/promotion">
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label for="fromClass">Current Class Level *</label>
+              <select id="fromClass" name="fromClass" required>
+                <option value="">Select class</option>
+                <% classLevels.forEach(function(level) { %>
+                  <option value="<%= level %>"<%= fromClass === level ? ' selected' : '' %>><%= level %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="fromArm">Current Arm *</label>
+              <select id="fromArm" name="fromArm" required>
+                <option value="">Select arm</option>
+                <% arms.forEach(function(armOption) { %>
+                  <option value="<%= armOption %>"<%= fromArm === armOption ? ' selected' : '' %>><%= armOption %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--outline">Load Students</button>
+          </div>
+        </form>
+      </div>
+
+      <% if (fromClass && fromArm) { %>
+        <div class="admin-panel">
+          <h2 class="admin-panel-title">
+            Students in <%= fromClass %> Arm <%= fromArm %>
+            (<%= students.length %>)
+          </h2>
+
+          <% if (students.length) { %>
+            <form class="admin-form" method="POST" action="/slc-admin/promotion" id="promotionForm">
+              <input type="hidden" name="fromClass" value="<%= fromClass %>">
+              <input type="hidden" name="fromArm" value="<%= fromArm %>">
+
+              <div class="admin-form-grid promotion-target-grid">
+                <div class="form-group">
+                  <label for="toClass">Promote To Class Level *</label>
+                  <select id="toClass" name="toClass" required>
+                    <option value="">Select class</option>
+                    <% classLevels.forEach(function(level) { %>
+                      <option value="<%= level %>"<%= toClass === level ? ' selected' : '' %>><%= level %></option>
+                    <% }); %>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="toArm">Promote To Arm *</label>
+                  <select id="toArm" name="toArm" required>
+                    <option value="">Select arm</option>
+                    <% arms.forEach(function(armOption) { %>
+                      <option value="<%= armOption %>"<%= toArm === armOption ? ' selected' : '' %>><%= armOption %></option>
+                    <% }); %>
+                  </select>
+                </div>
+              </div>
+
+              <p class="admin-form-note">Check the students to promote, then choose the new class and arm.</p>
+
+              <div class="admin-table-wrap">
+                <table class="data-table admin-table">
+                  <thead>
+                    <tr>
+                      <th class="promotion-check-col">
+                        <label class="admin-checkbox-label promotion-select-all-label">
+                          <input type="checkbox" id="promotionSelectAll" aria-label="Select all students">
+                          <span>All</span>
+                        </label>
+                      </th>
+                      <th>Student ID</th>
+                      <th>Name</th>
+                      <th>Current Class</th>
+                      <th>Arm</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% students.forEach(function(s) { %>
+                      <tr>
+                        <td class="promotion-check-col">
+                          <label class="admin-checkbox-label">
+                            <input
+                              type="checkbox"
+                              class="promotion-student-check"
+                              name="students"
+                              value="<%= s._id %>"
+                            >
+                          </label>
+                        </td>
+                        <td><%= s.studentId %></td>
+                        <td><%= s.firstName %><% if (s.middleName) { %> <%= s.middleName %><% } %> <%= s.lastName %></td>
+                        <td><%= s.classLevel %></td>
+                        <td><%= s.arm || '—' %></td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="admin-form-actions">
+                <button type="submit" class="btn btn--gold" onclick="return confirmPromotion()">Promote Selected Students</button>
+              </div>
+            </form>
+          <% } else { %>
+            <p class="admin-empty">No students found in <%= fromClass %> Arm <%= fromArm %>.</p>
+          <% } %>
+        </div>
+      <% } else { %>
+        <div class="admin-panel">
+          <p class="admin-form-note">Choose a class level and arm, then click <strong>Load Students</strong> to begin.</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const selectAll = document.getElementById('promotionSelectAll');
+    const checks = document.querySelectorAll('.promotion-student-check');
+    if (!selectAll || !checks.length) return;
+
+    selectAll.addEventListener('change', function () {
+      checks.forEach(function (box) {
+        box.checked = selectAll.checked;
+      });
+    });
+
+    checks.forEach(function (box) {
+      box.addEventListener('change', function () {
+        const allChecked = Array.from(checks).every(function (item) { return item.checked; });
+        const someChecked = Array.from(checks).some(function (item) { return item.checked; });
+        selectAll.checked = allChecked;
+        selectAll.indeterminate = !allChecked && someChecked;
+      });
+    });
+  })();
+
+  function confirmPromotion() {
+    const form = document.getElementById('promotionForm');
+    if (!form) return false;
+
+    const selected = form.querySelectorAll('.promotion-student-check:checked');
+    if (!selected.length) {
+      alert('Select at least one student to promote.');
+      return false;
+    }
+
+    const toClass = form.querySelector('#toClass').value;
+    const toArm = form.querySelector('#toArm').value;
+    if (!toClass || !toArm) {
+      alert('Select the class level and arm to promote students to.');
+      return false;
+    }
+
+    const fromClass = form.querySelector('input[name="fromClass"]').value;
+    const fromArm = form.querySelector('input[name="fromArm"]').value;
+    if (fromClass === toClass && fromArm === toArm) {
+      alert('Choose a different class or arm from the current one.');
+      return false;
+    }
+
+    return confirm('Promote ' + selected.length + ' student(s) to ' + toClass + ' Arm ' + toArm + '?');
+  }
+</script>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>
