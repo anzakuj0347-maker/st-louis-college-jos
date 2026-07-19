@@ -135,8 +135,7 @@ router.get('/qr', async (req, res, next) => {
     }
 
     const verifyUrl = buildResultVerifyUrl(getBaseUrl(req), user.studentId, sessionName, term);
-    const qrText = buildResultQrText({ ...resultView, verifyUrl });
-    const buffer = await buildResultQrBuffer(qrText);
+    const buffer = await buildResultQrBuffer(verifyUrl);
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');

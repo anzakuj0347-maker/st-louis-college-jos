@@ -117,9 +117,9 @@ function buildResultQrText({ student, classLevel, term, session, subjectResults,
 
 async function buildResultQrDataUrl(text) {
   return QRCode.toDataURL(text, {
-    errorCorrectionLevel: 'L',
-    margin: 1,
-    width: 280,
+    errorCorrectionLevel: 'M',
+    margin: 2,
+    width: 320,
     color: {
       dark: '#003da5',
       light: '#ffffff'
@@ -129,9 +129,9 @@ async function buildResultQrDataUrl(text) {
 
 async function buildResultQrBuffer(text) {
   return QRCode.toBuffer(text, {
-    errorCorrectionLevel: 'L',
-    margin: 1,
-    width: 280,
+    errorCorrectionLevel: 'M',
+    margin: 2,
+    width: 320,
     color: {
       dark: '#003da5',
       light: '#ffffff'
@@ -142,15 +142,13 @@ async function buildResultQrBuffer(text) {
 async function buildResultQrForStudent(req, resultView) {
   const { student, term, session } = resultView;
   const verifyUrl = buildResultVerifyUrl(getBaseUrl(req), student.studentId, session, term);
-  const qrText = buildResultQrText({ ...resultView, verifyUrl });
-  const qrImageUrl = await buildResultQrDataUrl(qrText);
+  const qrImageUrl = await buildResultQrDataUrl(verifyUrl);
   const fingerprint = buildResultContentFingerprint(resultView);
 
   return {
     verifyUrl,
     qrImageUrl,
-    fingerprint,
-    qrText
+    fingerprint
   };
 }
 

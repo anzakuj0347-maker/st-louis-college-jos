@@ -90,14 +90,17 @@
     <% if (typeof showQr === 'undefined' || showQr) { %>
     <div class="print-result-qr">
       <img
-        src="<%= typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : '' %>"
+        src="<%- typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : '' %>"
         class="print-result-qr-code"
-        alt="Scan to view result details"
-        width="132"
-        height="132"
+        alt="Scan to open verified student result"
+        width="160"
+        height="160"
         loading="eager"
       >
-      <p class="print-result-qr-caption">Scan to view result details</p>
+      <p class="print-result-qr-caption">Scan to open the verified result report online</p>
+      <% if (typeof verifyUrl !== 'undefined' && verifyUrl) { %>
+        <a href="<%= verifyUrl %>" class="print-result-verify-link no-print" target="_blank" rel="noopener noreferrer">Open verified result</a>
+      <% } %>
     </div>
     <% } %>
   </div>

@@ -2100,9 +2100,23 @@ a:hover { color: var(--msm-red-dark); }
 
 .print-result-qr-code {
   display: block;
-  width: 132px;
-  height: 132px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
+}
+
+.print-result-verify-link {
+  display: inline-block;
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--royal-blue);
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.print-result-verify-link:hover {
+  text-decoration: underline;
 }
 
 .print-result-qr-caption {
@@ -2298,8 +2312,8 @@ a:hover { color: var(--msm-red-dark); }
   }
 
   .student-terminal-report--print .print-result-qr-code {
-    width: 18mm;
-    height: 18mm;
+    width: 22mm;
+    height: 22mm;
   }
 
   .student-terminal-report--print .print-result-qr-caption {
@@ -2776,8 +2790,8 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
   }
 
   .print-result-qr-code {
-    width: 120px;
-    height: 120px;
+    width: 160px;
+    height: 160px;
   }
 
   .student-terminal-report--embedded .print-ca-footer {
