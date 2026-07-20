@@ -1808,14 +1808,18 @@ a:hover { color: var(--msm-red-dark); }
   overflow-x: visible;
 }
 
-.student-terminal-report--embedded .print-result-summary-row {
-  flex-direction: column;
-  align-items: stretch;
+.student-terminal-report--embedded .report-card-body {
+  display: block;
 }
 
-.student-terminal-report--embedded .print-result-qr {
-  align-self: center;
-  margin-top: 0.5rem;
+.student-terminal-report--embedded .report-card-summary-top {
+  min-height: 72px;
+  padding-right: 78px;
+}
+
+.student-terminal-report--embedded .report-card-summary-qr {
+  top: 0;
+  right: 0;
 }
 
 .page-content--verify-result {
@@ -1847,6 +1851,373 @@ a:hover { color: var(--msm-red-dark); }
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid rgba(0, 48, 135, 0.12);
+}
+
+/* Student report card (screen + print) */
+.student-report-card {
+  width: 100%;
+  color: #1a1a1a;
+  font-family: Arial, Helvetica, sans-serif;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+  margin-bottom: 0.65rem;
+}
+
+.report-card-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.report-card-school {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.report-card-school-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--royal-blue, #003087);
+}
+
+.report-card-school-address,
+.report-card-school-email {
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  color: #444;
+}
+
+.report-card-title-bar {
+  margin: 0 0 0.55rem;
+  padding: 0.35rem 0.5rem;
+  background: #d9d9d9;
+  border: 1px solid #999;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.report-card-student-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.8fr;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.78rem;
+}
+
+.report-card-student-label {
+  color: #555;
+  margin-right: 0.25rem;
+}
+
+.report-card-body {
+  margin-bottom: 0.65rem;
+}
+
+.report-card-main {
+  min-width: 0;
+}
+
+.report-card-main--full {
+  width: 100%;
+}
+
+.report-card-remarks {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.report-card-remarks .report-card-principal-box {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.report-card-table {
+  margin-bottom: 0;
+  font-size: 0.78rem;
+  table-layout: auto;
+}
+
+.report-card-table .report-card-remark {
+  text-align: left;
+  font-size: 0.72rem;
+  white-space: normal;
+}
+
+.report-card-table .report-card-scholastic-label {
+  width: 10%;
+  font-size: 0.58rem;
+  vertical-align: middle;
+  text-align: center;
+  line-height: 1.15;
+  padding: 0.2rem 0.15rem;
+}
+
+.report-card-table .report-card-term-head {
+  text-align: center;
+  font-size: 0.72rem;
+}
+
+.report-card-table .report-card-max {
+  font-weight: 400;
+  font-size: 0.58rem;
+}
+
+.report-card-th-fit {
+  display: none;
+}
+
+.report-card-table .report-card-score-cell,
+.report-card-table .report-card-table-head-sub th:not(:first-child):not(:nth-last-child(-n+2)) {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.report-card-table .report-card-subject,
+.report-card-table td:first-child,
+.report-card-table .report-card-table-head-sub th:first-child {
+  text-align: left;
+  font-size: 0.64rem;
+  white-space: nowrap;
+  word-wrap: normal;
+  overflow-wrap: normal;
+}
+
+.report-card-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.report-card-side-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.62rem;
+}
+
+.report-card-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.47rem;
+  line-height: 1.05;
+}
+
+.report-card-side-table th,
+.report-card-side-table td {
+  border: 1px solid #333;
+  padding: 0.25rem 0.3rem;
+  text-align: left;
+}
+
+.report-card-summary-table th,
+.report-card-summary-table td {
+  border: 1px solid #333;
+  padding: 0.19rem 0.23rem;
+  text-align: left;
+  line-height: 1.05;
+}
+
+.report-card-side-table th {
+  background: #eef2f8;
+  text-align: center;
+  font-weight: 700;
+}
+
+.report-card-summary-table th {
+  background: #eef2f8;
+  text-align: center;
+  font-weight: 700;
+  padding: 0.17rem 0.23rem;
+}
+
+.report-card-side-table td:last-child {
+  text-align: center;
+  width: 38%;
+}
+
+.report-card-summary-table td:last-child {
+  text-align: center;
+  width: 38%;
+}
+
+.report-card-principal-box {
+  border: 1px solid #333;
+  padding: 0.3rem 0.4rem;
+  background: #fafbfc;
+}
+
+.report-card-principal-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.report-card-principal-text {
+  margin: 0;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.report-card-qr {
+  padding: 0.25rem;
+  align-self: center;
+}
+
+.report-card-qr .print-result-qr-code {
+  width: 88px;
+  height: 88px;
+}
+
+.report-card-qr .print-result-qr-caption {
+  font-size: 0.58rem;
+  max-width: none;
+}
+
+.report-card-summary-title {
+  margin: 0;
+  font-size: 0.52rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.report-card-summary-stat {
+  font-size: 0.5rem;
+  white-space: nowrap;
+}
+
+.report-card-summary-stat,
+.report-card-summary-title {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.report-card-summary-label {
+  color: #555;
+  text-transform: uppercase;
+  font-size: 0.44rem;
+  letter-spacing: 0.02em;
+}
+
+.report-card-summary-panel {
+  position: relative;
+  border: 1px solid #333;
+  background: #fafbfc;
+  margin-bottom: 0.35rem;
+  padding: 0.3rem 0.45rem 0.35rem;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.report-card-summary-top {
+  position: relative;
+  min-height: 72px;
+  padding-right: 78px;
+  margin-bottom: 0.25rem;
+}
+
+.report-card-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.55rem;
+}
+
+.report-card-summary-panel .report-card-principal-box {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+.report-card-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid #333;
+}
+
+.report-card-summary-qr {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  line-height: 0;
+  font-size: 0;
+}
+
+.report-card-summary-qr .print-result-qr-code,
+.report-card-summary-qr-code {
+  width: 72px;
+  height: 72px;
+  display: block;
+  object-fit: contain;
+  margin: 0;
+  padding: 0;
+}
+
+.report-card-signature {
+  text-align: center;
+  min-width: 0;
+}
+
+.report-card-signature-line {
+  height: 14px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 0.1rem;
+}
+
+.report-card-signature p {
+  margin: 0;
+  font-size: 0.54rem;
+  line-height: 1.1;
+}
+
+.report-card-seal {
+  text-align: center;
+}
+
+.report-card-seal-img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 0.15rem;
+}
+
+.report-card-seal p {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
 }
 
 .print-result-table td:nth-child(2) {
@@ -2105,6 +2476,11 @@ a:hover { color: var(--msm-red-dark); }
   object-fit: contain;
 }
 
+.report-card-summary-qr .print-result-qr-code {
+  width: 72px;
+  height: 72px;
+}
+
 .print-result-verify-link {
   display: inline-block;
   margin-top: 0.45rem;
@@ -2148,10 +2524,135 @@ a:hover { color: var(--msm-red-dark); }
   text-align: center;
 }
 
+.print-th-short {
+  display: none;
+}
+
+.print-result-stage {
+  box-sizing: border-box;
+}
+
+.print-result-fit {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.print-result-page .print-result-stage {
+  width: calc(210mm - 8mm);
+  min-height: calc(297mm - 8mm);
+  margin: 1rem auto 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+body.print-result-page .print-result-fit {
+  width: 100%;
+  max-width: calc(210mm - 8mm);
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+body.print-result-page .print-data-table,
+body.print-result-page .print-table-wrap .print-data-table {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* Print page preview + print: summary, comment, signatures in pt */
+body.print-result-page .report-card-summary-title {
+  font-size: 8pt;
+  line-height: 1.15;
+}
+
+body.print-result-page .report-card-summary-stat {
+  font-size: 7.5pt;
+  line-height: 1.15;
+}
+
+body.print-result-page .report-card-summary-label {
+  font-size: 7pt;
+}
+
+body.print-result-page .report-card-principal-title {
+  font-size: 7.5pt;
+}
+
+body.print-result-page .report-card-principal-text {
+  font-size: 7.5pt;
+  line-height: 1.25;
+}
+
+body.print-result-page .report-card-signature p {
+  font-size: 7pt;
+  line-height: 1.15;
+}
+
+body.print-result-page .student-report-card--compact .report-card-summary-title {
+  font-size: 7.5pt;
+}
+
+body.print-result-page .student-report-card--compact .report-card-summary-stat {
+  font-size: 7pt;
+}
+
+body.print-result-page .student-report-card--compact .report-card-summary-label,
+body.print-result-page .student-report-card--compact .report-card-principal-title,
+body.print-result-page .student-report-card--compact .report-card-principal-text,
+body.print-result-page .student-report-card--compact .report-card-signature p {
+  font-size: 7pt;
+}
+
+body.print-result-page .student-report-card--dense .report-card-summary-title,
+body.print-result-page .student-report-card--dense .report-card-principal-title {
+  font-size: 7pt;
+}
+
+body.print-result-page .student-report-card--dense .report-card-summary-stat,
+body.print-result-page .student-report-card--dense .report-card-summary-label,
+body.print-result-page .student-report-card--dense .report-card-principal-text,
+body.print-result-page .student-report-card--dense .report-card-signature p {
+  font-size: 6.5pt;
+}
+
+body.print-result-page .student-report-card--extra-dense .report-card-summary-title,
+body.print-result-page .student-report-card--extra-dense .report-card-principal-title {
+  font-size: 6.5pt;
+}
+
+body.print-result-page .student-report-card--extra-dense .report-card-summary-stat,
+body.print-result-page .student-report-card--extra-dense .report-card-summary-label,
+body.print-result-page .student-report-card--extra-dense .report-card-principal-text,
+body.print-result-page .student-report-card--extra-dense .report-card-signature p {
+  font-size: 6pt;
+}
+
+body.print-result-page .report-card-summary-top {
+  min-height: 18mm;
+  padding-right: 19mm;
+}
+
+body.print-result-page .report-card-summary-qr .print-result-qr-code,
+body.print-result-page .report-card-summary-qr-code {
+  width: 18mm;
+  height: 18mm;
+}
+
 @media print {
   @page {
     size: A4 landscape;
     margin: 6mm;
+  }
+
+  @page result-portrait {
+    size: A4 portrait;
+    margin: 4mm;
+  }
+
+  body.print-result-page {
+    page: result-portrait;
+    overflow: hidden;
   }
 
   body * {
@@ -2167,6 +2668,7 @@ a:hover { color: var(--msm-red-dark); }
     visibility: visible;
   }
 
+  body.print-result-page,
   body.print-result-page * {
     visibility: visible;
   }
@@ -2177,13 +2679,42 @@ a:hover { color: var(--msm-red-dark); }
     visibility: hidden !important;
   }
 
+  body.print-result-page .print-result-stage {
+    width: calc(210mm - 8mm);
+    height: calc(297mm - 8mm);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body.print-result-page .print-result-fit,
   body.print-result-page .print-only {
     position: static;
     left: auto;
     top: auto;
-    width: 100%;
+    width: calc(210mm - 8mm);
+    max-width: calc(210mm - 8mm);
     padding: 0;
     margin: 0;
+    transform-origin: center center;
+  }
+
+  body.print-result-page .print-result-fit {
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  body.print-result-page .student-terminal-report--print {
+    padding: 0 !important;
+    min-height: 0;
+    width: 100%;
+  }
+
+  body.print-result-page .student-terminal-report--print .student-report-card {
+    min-height: 0;
   }
 
   .print-only,
@@ -2217,122 +2748,447 @@ a:hover { color: var(--msm-red-dark); }
     width: 100%;
   }
 
+  body.print-result-page .print-only,
+  body.print-result-page .student-terminal-report {
+    position: static !important;
+    padding: 0 !important;
+  }
+
+  body.print-result-page .print-th-short {
+    display: none;
+  }
+
+  body.print-result-page .print-th-long {
+    display: inline;
+  }
+
+  body.print-result-page .print-table-wrap,
+  body.print-result-page .report-card-main,
+  body.print-result-page .report-card-body {
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  body.print-result-page .report-card-th-full {
+    display: none;
+  }
+
+  body.print-result-page .report-card-th-fit {
+    display: inline;
+  }
+
+  body.print-result-page .report-card-table,
+  body.print-result-page .print-table-wrap .report-card-table,
+  body.print-result-page .print-data-table,
+  body.print-result-page .print-table-wrap .print-data-table {
+    min-width: 0 !important;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  body.print-result-page .report-card-col-subject {
+    width: 18%;
+  }
+
+  body.print-result-page .report-card-col-score {
+    width: 5.5%;
+  }
+
+  body.print-result-page .report-card-col-metric {
+    width: 4.5%;
+  }
+
+  body.print-result-page .report-card-col-position,
+  body.print-result-page .report-card-table .report-card-col-position {
+    width: 5%;
+    min-width: 5mm;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  body.print-result-page .report-card-col-remark,
+  body.print-result-page .report-card-table .report-card-col-remark {
+    width: 16%;
+    min-width: 14mm;
+    text-align: left;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  body.print-result-page .report-card-col-sign,
+  body.print-result-page .report-card-table .report-card-col-sign {
+    width: 6%;
+    min-width: 5mm;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  body.print-result-page .print-data-table,
+  body.print-result-page .print-data-table thead,
+  body.print-result-page .print-data-table tbody,
+  body.print-result-page .print-data-table tr,
+  body.print-result-page .report-card-footer,
+  body.print-result-page .report-card-summary-panel,
+  body.print-result-page .report-card-principal-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  body.print-result-page .report-card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  body.print-result-page .print-table-wrap {
+    overflow: visible;
+  }
+
   .student-terminal-report--print {
     position: static;
     padding: 0 !important;
-    font-size: 7pt;
+    font-size: 10pt;
     line-height: 1.2;
     page-break-after: avoid;
     page-break-inside: avoid;
   }
 
-  .student-terminal-report--print .print-ca-header {
-    margin-bottom: 2mm;
-    gap: 3mm;
-    align-items: flex-start;
+  .student-terminal-report--print .student-report-card {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    box-sizing: border-box;
   }
 
-  .student-terminal-report--print .print-school-logo {
-    width: 44px;
-    height: 44px;
-  }
-
-  .student-terminal-report--print .print-school-name {
-    font-size: 10pt;
-    line-height: 1.15;
-  }
-
-  .student-terminal-report--print .print-doc-title {
+  body.print-result-page .student-report-card--compact .report-card-table,
+  body.print-result-page .student-report-card--compact .print-data-table {
     font-size: 8pt;
-    margin-top: 1mm;
   }
 
-  .student-terminal-report--print .print-meta-table th,
-  .student-terminal-report--print .print-meta-table td {
-    padding: 0.5mm 1.5mm;
-    font-size: 6.5pt;
+  body.print-result-page .student-report-card--compact .print-data-table th,
+  body.print-result-page .student-report-card--compact .print-data-table td {
+    padding: 0.2mm 0.25mm;
   }
 
-  .student-terminal-report--print .print-table-wrap {
-    margin: 0 0 2mm;
+  body.print-result-page .student-report-card--compact .report-card-top {
+    margin-bottom: 0.6mm;
   }
 
-  .student-terminal-report--print .print-data-table {
+  body.print-result-page .student-report-card--compact .report-card-summary-top {
+    min-height: 16mm;
+    padding-right: 17mm;
+  }
+
+  body.print-result-page .student-report-card--compact .report-card-summary-qr .print-result-qr-code,
+  body.print-result-page .student-report-card--compact .report-card-summary-qr-code {
+    width: 16mm;
+    height: 16mm;
+  }
+
+  body.print-result-page .student-report-card--dense .report-card-table,
+  body.print-result-page .student-report-card--dense .print-data-table {
+    font-size: 7.5pt;
+  }
+
+  body.print-result-page .student-report-card--dense .print-data-table th,
+  body.print-result-page .student-report-card--dense .print-data-table td {
+    padding: 0.15mm 0.2mm;
+    line-height: 1;
+  }
+
+  body.print-result-page .student-report-card--dense .report-card-top,
+  body.print-result-page .student-report-card--dense .report-card-title-bar,
+  body.print-result-page .student-report-card--dense .report-card-student-row {
+    margin-bottom: 0.5mm;
+  }
+
+  body.print-result-page .student-report-card--dense .report-card-logo {
+    width: 22px;
+    height: 22px;
+  }
+
+  body.print-result-page .student-report-card--dense .report-card-summary-top {
+    min-height: 14mm;
+    padding-right: 15mm;
+  }
+
+  body.print-result-page .student-report-card--dense .report-card-summary-qr .print-result-qr-code,
+  body.print-result-page .student-report-card--dense .report-card-summary-qr-code {
+    width: 14mm;
+    height: 14mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-table,
+  body.print-result-page .student-report-card--extra-dense .print-data-table {
+    font-size: 7pt;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .print-data-table th,
+  body.print-result-page .student-report-card--extra-dense .print-data-table td {
+    padding: 0.1mm 0.15mm;
+    line-height: 0.95;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-table .report-card-table-head-sub th {
+    font-size: 4.8pt;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-table .report-card-max {
+    font-size: 4.2pt;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-top {
+    margin-bottom: 0.4mm;
+    gap: 1mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-logo {
+    width: 18px;
+    height: 18px;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-school-name {
+    font-size: 9pt;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-school-address,
+  body.print-result-page .student-report-card--extra-dense .report-card-school-email {
     font-size: 6pt;
-    margin-bottom: 2mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-title-bar,
+  body.print-result-page .student-report-card--extra-dense .report-card-student-row {
+    font-size: 6pt;
+    margin-bottom: 0.4mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-summary-panel {
+    margin-bottom: 0.4mm;
+    padding: 0.4mm 0.6mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-summary-top {
+    min-height: 12mm;
+    padding-right: 13mm;
+    margin-bottom: 0.3mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-principal-text {
+    font-size: 6pt;
+    line-height: 1.1;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-summary-qr .print-result-qr-code,
+  body.print-result-page .student-report-card--extra-dense .report-card-summary-qr-code {
+    width: 12mm;
+    height: 12mm;
+  }
+
+  body.print-result-page .student-report-card--extra-dense .report-card-signature-line {
+    height: 2mm;
+  }
+
+  .student-terminal-report--print .report-card-body {
+    margin-bottom: 0.5mm;
+    flex: 0 1 auto;
+  }
+
+  .student-terminal-report--print .report-card-remarks {
+    margin-bottom: 0.5mm;
+    gap: 1mm;
+    flex: 0 0 auto;
+  }
+
+  .student-terminal-report--print .report-card-top {
+    margin-bottom: 1mm;
+    gap: 2mm;
+  }
+
+  .student-terminal-report--print .report-card-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .student-terminal-report--print .report-card-school-name {
+    font-size: 13pt;
+    line-height: 1.2;
+  }
+
+  .student-terminal-report--print .report-card-school-address,
+  .student-terminal-report--print .report-card-school-email {
+    font-size: 8.5pt;
+    line-height: 1.2;
+  }
+
+  .student-terminal-report--print .report-card-title-bar {
+    margin-bottom: 1.2mm;
+    padding: 1mm 1.2mm;
+    font-size: 9.5pt;
+  }
+
+  .student-terminal-report--print .report-card-student-row {
+    margin-bottom: 1.2mm;
+    gap: 1mm 2mm;
+    font-size: 8.5pt;
+  }
+
+  .student-terminal-report--print .report-card-table {
+    font-size: 9pt;
+  }
+
+  .student-terminal-report--print .report-card-table .report-card-term-head {
+    font-size: 9pt;
+  }
+
+  .student-terminal-report--print .report-card-table .report-card-max {
+    font-size: 7pt;
   }
 
   .student-terminal-report--print .print-data-table th,
   .student-terminal-report--print .print-data-table td {
-    padding: 0.6mm 0.8mm;
+    padding: 0.5mm 0.45mm;
     line-height: 1.15;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
   }
 
-  .student-terminal-report--print .print-result-summary--compact {
-    margin: 1.5mm 0;
-    padding: 2mm 2.5mm;
+  .student-terminal-report--print .report-card-table .report-card-score-cell,
+  .student-terminal-report--print .report-card-table .report-card-table-head-sub th:not(:first-child):not(.report-card-col-position):not(.report-card-col-remark):not(.report-card-col-sign) {
+    text-align: center;
+    white-space: nowrap;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    padding: 0.25mm 0.15mm;
   }
 
-  .student-terminal-report--print .print-result-summary h2 {
-    margin-bottom: 1mm;
+  .student-terminal-report--print .report-card-table .report-card-subject,
+  .student-terminal-report--print .report-card-table td:first-child,
+  .student-terminal-report--print .report-card-table .report-card-table-head-sub th:first-child {
+    font-size: 8pt;
+    white-space: nowrap;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .student-terminal-report--print .report-card-table .report-card-col-position,
+  .student-terminal-report--print .report-card-table .report-card-col-sign {
+    font-size: 8pt;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .student-terminal-report--print .report-card-table .report-card-col-remark,
+  .student-terminal-report--print .report-card-table .report-card-remark {
     font-size: 7.5pt;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.1;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
   }
 
-  .student-terminal-report--print .print-summary-grid--compact {
-    gap: 1mm 2mm;
-    margin-bottom: 1mm;
+  .student-terminal-report--print .report-card-table .report-card-table-head-sub th {
+    font-size: 7.5pt;
+    vertical-align: bottom;
   }
 
-  .student-terminal-report--print .print-summary-label {
-    font-size: 5.5pt;
+  .student-terminal-report--print .print-data-table {
+    margin-bottom: 0;
+    table-layout: fixed;
+    width: 100%;
   }
 
-  .student-terminal-report--print .print-summary-grid--compact strong {
-    font-size: 7pt;
+  .student-terminal-report--print .report-card-summary-panel {
+    margin-bottom: 0.8mm;
+    padding: 0.6mm 0.8mm 0.7mm;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
-  .student-terminal-report--print .print-principal-comment--compact h3 {
-    font-size: 6.5pt;
+  .student-terminal-report--print .report-card-summary-top {
+    min-height: 18mm;
+    padding-right: 19mm;
     margin-bottom: 0.5mm;
   }
 
-  .student-terminal-report--print .print-principal-comment--compact p {
-    font-size: 6pt;
+  .student-terminal-report--print .report-card-summary-meta {
+    gap: 0.25mm 0.8mm;
+  }
+
+  body.print-result-page .report-card-summary-title,
+  .student-terminal-report--print .report-card-summary-title {
+    font-size: 8pt;
+    line-height: 1.15;
+  }
+
+  body.print-result-page .report-card-summary-stat,
+  .student-terminal-report--print .report-card-summary-stat {
+    font-size: 7.5pt;
+    line-height: 1.15;
+  }
+
+  body.print-result-page .report-card-summary-label,
+  .student-terminal-report--print .report-card-summary-label {
+    font-size: 7pt;
+  }
+
+  .student-terminal-report--print .report-card-summary-qr {
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    line-height: 0;
+  }
+
+  body.print-result-page .report-card-summary-qr .print-result-qr-code,
+  body.print-result-page .report-card-summary-qr-code,
+  .student-terminal-report--print .report-card-summary-qr .print-result-qr-code,
+  .student-terminal-report--print .report-card-summary-qr-code {
+    width: 18mm;
+    height: 18mm;
+    margin: 0;
+    padding: 0;
+  }
+
+  .student-terminal-report--print .report-card-footer {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 0.35rem;
+    padding-top: 0.4mm;
+    gap: 2mm;
+    flex: 0 0 auto;
+    align-items: end;
+  }
+
+  .student-terminal-report--print .report-card-principal-box {
+    padding: 0.8mm 1mm;
+    min-height: 0;
+  }
+
+  body.print-result-page .report-card-principal-title,
+  .student-terminal-report--print .report-card-principal-title {
+    font-size: 7.5pt;
+    margin-bottom: 0.3mm;
+  }
+
+  body.print-result-page .report-card-principal-text,
+  .student-terminal-report--print .report-card-principal-text {
+    font-size: 7.5pt;
     line-height: 1.25;
   }
 
-  .student-terminal-report--print .print-result-summary-row {
-    flex-direction: row;
-    align-items: center;
-    gap: 3mm;
+  .student-terminal-report--print .report-card-signature-line {
+    height: 3mm;
+    margin-bottom: 0.2mm;
   }
 
-  .student-terminal-report--print .print-result-qr {
-    padding: 1mm;
-  }
-
-  .student-terminal-report--print .print-result-qr-code {
-    width: 22mm;
-    height: 22mm;
-  }
-
-  .student-terminal-report--print .print-result-qr-caption {
-    font-size: 5pt;
-    margin-top: 0.5mm;
-  }
-
-  .student-terminal-report--print .print-ca-footer {
-    margin-top: 3mm;
-    gap: 6mm;
-  }
-
-  .student-terminal-report--print .print-signature-block {
-    margin-top: 0;
-  }
-
-  .student-terminal-report--print .print-signature-line {
-    margin-top: 8mm;
-    font-size: 6.5pt;
+  body.print-result-page .report-card-signature p,
+  .student-terminal-report--print .report-card-signature p {
+    font-size: 7pt;
+    line-height: 1.15;
   }
 
   .print-data-table {
@@ -2344,14 +3200,15 @@ a:hover { color: var(--msm-red-dark); }
     break-inside: avoid;
   }
 
-  .print-result-summary,
-  .print-ca-footer {
+  .report-card-footer,
+  .report-card-summary-panel,
+  .report-card-principal-box {
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  .print-result-qr,
-  .print-result-qr-code {
+  .report-card-summary-qr,
+  .report-card-summary-qr-code {
     page-break-inside: avoid;
     break-inside: avoid;
   }
@@ -2757,46 +3614,32 @@ body.admin-sidebar-open .admin-sidebar-backdrop {
     overflow-x: visible;
   }
 
-  .student-terminal-report--embedded .print-ca-header {
+  .student-terminal-report--embedded .report-card-top {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
-  .student-terminal-report--embedded .print-meta-table {
-    width: 100%;
+  .student-terminal-report--embedded .report-card-student-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
   }
 
-  .student-terminal-report--embedded .print-data-table,
-  .print-table-wrap .print-data-table {
-    min-width: 960px;
-  }
-
-  .student-terminal-report--embedded .print-summary-grid:not(.print-summary-grid--compact) {
+  .student-terminal-report--embedded .report-card-body {
     grid-template-columns: 1fr;
   }
 
-  .student-terminal-report--embedded .print-summary-grid--compact {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .student-terminal-report--embedded .report-card-table,
+  .print-table-wrap .report-card-table {
+    min-width: 1040px;
   }
 
-  .print-result-summary-row {
-    flex-direction: column;
-    align-items: stretch;
+  .student-terminal-report--embedded .report-card-footer {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
-  .print-result-qr {
-    align-self: center;
-    margin-top: 0.15rem;
-  }
-
-  .print-result-qr-code {
-    width: 160px;
-    height: 160px;
-  }
-
-  .student-terminal-report--embedded .print-ca-footer {
-    flex-direction: column;
-    gap: 1.5rem;
+  .student-terminal-report--embedded .report-card-summary-meta {
+    gap: 0.25rem 0.65rem;
   }
 
   .student-result-actions {

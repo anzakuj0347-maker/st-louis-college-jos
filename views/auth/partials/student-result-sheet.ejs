@@ -1,119 +1,131 @@
-<header class="print-ca-header">
-  <div class="print-ca-header-left">
-    <img src="/images/logo.jpg" alt="St. Louis College Jos Logo" class="print-school-logo">
-    <div>
-      <h1 class="print-school-name">St. Louis College Jos</h1>
-      <p class="print-doc-title">Student Terminal Report</p>
+<article class="student-report-card" data-subject-count="<%= subjectResults.length %>">
+  <header class="report-card-top">
+    <img src="/images/logo.jpg" alt="St. Louis College Jos Logo" class="report-card-logo">
+    <div class="report-card-school">
+      <h1 class="report-card-school-name">St. Louis College Jos</h1>
+      <p class="report-card-school-address">Jos, Plateau State, Nigeria</p>
+      <p class="report-card-school-email">info@stlouisvillejos.sch.ng</p>
+    </div>
+  </header>
+
+  <div class="report-card-title-bar">
+    <%= term %> · <%= session %> Report Card
+  </div>
+
+  <div class="report-card-student-row">
+    <div class="report-card-student-item">
+      <span class="report-card-student-label">Student Name:</span>
+      <strong><%= student.firstName %><% if (student.middleName) { %> <%= student.middleName %><% } %> <%= student.lastName %></strong>
+    </div>
+    <div class="report-card-student-item">
+      <span class="report-card-student-label">Arm:</span>
+      <strong><%= classLevel %> — <%= student.arm || '—' %></strong>
+    </div>
+    <div class="report-card-student-item">
+      <span class="report-card-student-label">Admn No.:</span>
+      <strong><%= student.studentId %></strong>
     </div>
   </div>
-  <div class="print-ca-header-right">
-    <table class="print-meta-table">
-      <tr><th>Student ID</th><td><%= student.studentId %></td></tr>
-      <tr><th>Name</th><td><%= student.firstName %><% if (student.middleName) { %> <%= student.middleName %><% } %> <%= student.lastName %></td></tr>
-      <tr><th>Class</th><td><%= classLevel %> Arm <%= student.arm || '—' %></td></tr>
-      <tr><th>Term</th><td><%= term %></td></tr>
-      <tr><th>Session</th><td><%= session %></td></tr>
-    </table>
-  </div>
-</header>
 
-<div class="admin-table-wrap print-table-wrap">
-<table class="print-data-table print-result-table">
-  <thead>
-    <tr>
-      <th>S/N</th>
-      <th>Subject</th>
-      <th>1st Asgn</th>
-      <th>2nd Asgn</th>
-      <th>1st Test</th>
-      <th>2nd Test</th>
-      <th>Exam</th>
-      <th>Total</th>
-      <th>Average</th>
-      <th>Position</th>
-      <th>Grade</th>
-      <th>Remark</th>
-      <th>Sign</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% if (subjectResults.length) { %>
-      <% subjectResults.forEach(function(row, index) { %>
-        <tr>
-          <td><%= index + 1 %></td>
-          <td><%= row.subject %></td>
-          <td><%= row.firstAssignment !== '' ? row.firstAssignment : '—' %></td>
-          <td><%= row.secondAssignment !== '' ? row.secondAssignment : '—' %></td>
-          <td><%= row.firstTest !== '' ? row.firstTest : '—' %></td>
-          <td><%= row.secondTest !== '' ? row.secondTest : '—' %></td>
-          <td><%= row.exam !== '' ? row.exam : '—' %></td>
-          <td><%= row.total || '—' %></td>
-          <td><%= row.average !== '' && row.average !== undefined ? row.average : '—' %></td>
-          <td><%= row.position || '—' %></td>
-          <td><%= row.grade || '—' %></td>
-          <td><%= row.remark || '—' %></td>
-          <td><%= row.sign || '—' %></td>
-        </tr>
-      <% }); %>
-    <% } else { %>
-      <tr>
-        <td colspan="13" class="print-empty">No results recorded for this term and session.</td>
-      </tr>
-    <% } %>
-  </tbody>
-</table>
-</div>
-
-<section class="print-result-summary print-result-summary--compact">
-  <div class="print-result-summary-row">
-    <div class="print-result-summary-main">
-      <h2>Result Summary</h2>
-      <div class="print-summary-grid print-summary-grid--compact">
-        <div class="print-summary-item">
-          <span class="print-summary-label">Subjects</span>
-          <strong><%= summary.subjectsOffered %></strong>
-        </div>
-        <div class="print-summary-item">
-          <span class="print-summary-label">Credits</span>
-          <strong><%= summary.numberOfCredits %></strong>
-        </div>
-        <div class="print-summary-item">
-          <span class="print-summary-label">Class Avg</span>
-          <strong><%= summary.classAverage || '—' %></strong>
-        </div>
-      </div>
-      <div class="print-principal-comment print-principal-comment--compact">
-        <h3>Principal's Comment</h3>
-        <p><%= summary.principalComment %></p>
+  <div class="report-card-body">
+    <div class="report-card-main report-card-main--full">
+      <div class="admin-table-wrap print-table-wrap">
+        <table class="print-data-table print-result-table report-card-table">
+          <colgroup>
+            <col class="report-card-col-subject">
+            <col class="report-card-col-score" span="6">
+            <col class="report-card-col-metric" span="3">
+            <col class="report-card-col-remark">
+            <col class="report-card-col-sign">
+          </colgroup>
+          <thead>
+            <tr class="report-card-table-head-top">
+              <th colspan="12" class="report-card-term-head"><%= term %> — Scholastic Areas</th>
+            </tr>
+            <tr class="report-card-table-head-sub">
+              <th>Subject</th>
+              <th><span class="report-card-th-full">1st Assignment</span><span class="report-card-th-fit">1st Asgn</span><br><span class="report-card-max">(10)</span></th>
+              <th><span class="report-card-th-full">2nd Assignment</span><span class="report-card-th-fit">2nd Asgn</span><br><span class="report-card-max">(10)</span></th>
+              <th><span class="report-card-th-full">1st Test</span><span class="report-card-th-fit">1st Test</span><br><span class="report-card-max">(20)</span></th>
+              <th><span class="report-card-th-full">2nd Test</span><span class="report-card-th-fit">2nd Test</span><br><span class="report-card-max">(20)</span></th>
+              <th>Exam<br><span class="report-card-max">(40)</span></th>
+              <th>Total<br><span class="report-card-max">(100)</span></th>
+              <th><span class="report-card-th-full">Average</span><span class="report-card-th-fit">Avg</span></th>
+              <th class="report-card-col-position"><span class="report-card-th-full">Position</span><span class="report-card-th-fit">Pos</span></th>
+              <th>Grade</th>
+              <th class="report-card-col-remark">Remark</th>
+              <th class="report-card-col-sign">Sign</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (subjectResults.length) { %>
+              <% subjectResults.forEach(function(row) { %>
+                <tr>
+                  <td class="report-card-subject"><%= row.subject %></td>
+                  <td class="report-card-score-cell"><%= row.firstAssignment !== '' ? row.firstAssignment : '—' %></td>
+                  <td class="report-card-score-cell"><%= row.secondAssignment !== '' ? row.secondAssignment : '—' %></td>
+                  <td class="report-card-score-cell"><%= row.firstTest !== '' ? row.firstTest : '—' %></td>
+                  <td class="report-card-score-cell"><%= row.secondTest !== '' ? row.secondTest : '—' %></td>
+                  <td class="report-card-score-cell"><%= row.exam !== '' ? row.exam : '—' %></td>
+                  <td class="report-card-score-cell"><%= row.total || '—' %></td>
+                  <td class="report-card-score-cell"><%= row.average !== '' ? row.average : '—' %></td>
+                  <td class="report-card-score-cell report-card-col-position"><%= row.position || '—' %></td>
+                  <td class="report-card-score-cell"><%= row.grade || '—' %></td>
+                  <td class="report-card-remark report-card-col-remark"><%= row.remark || '—' %></td>
+                  <td class="report-card-score-cell report-card-col-sign"><%= row.sign || '—' %></td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="12" class="print-empty">No results recorded for this term and session.</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
       </div>
     </div>
-    <% if (typeof showQr === 'undefined' || showQr) { %>
-    <div class="print-result-qr">
-      <img
-        src="<%- typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : '' %>"
-        class="print-result-qr-code"
-        alt="Scan to open verified student result"
-        width="160"
-        height="160"
-        loading="eager"
-      >
-      <p class="print-result-qr-caption">Scan to open the verified result report online</p>
-      <% if (typeof verifyUrl !== 'undefined' && verifyUrl) { %>
-        <a href="<%= verifyUrl %>" class="print-result-verify-link no-print" target="_blank" rel="noopener noreferrer">Open verified result</a>
+  </div>
+
+  <section class="report-card-summary-panel">
+    <div class="report-card-summary-top">
+      <div class="report-card-summary-meta">
+        <span class="report-card-summary-title">Result Summary</span>
+        <span class="report-card-summary-stat"><span class="report-card-summary-label">Subjects</span> <strong><%= summary.subjectsOffered %></strong></span>
+        <span class="report-card-summary-stat"><span class="report-card-summary-label">Credits</span> <strong><%= summary.numberOfCredits %></strong></span>
+        <span class="report-card-summary-stat"><span class="report-card-summary-label">Class Avg</span> <strong><%= summary.classAverage || '—' %></strong></span>
+      </div>
+      <% if (typeof showQr === 'undefined' || showQr) { %>
+        <div class="report-card-summary-qr">
+          <img
+            src="<%- typeof qrImageUrl !== 'undefined' && qrImageUrl ? qrImageUrl : '' %>"
+            class="print-result-qr-code report-card-summary-qr-code"
+            alt="Scan to open verified student result"
+            width="52"
+            height="52"
+            loading="eager"
+          >
+        </div>
       <% } %>
     </div>
-    <% } %>
-  </div>
-</section>
 
-<footer class="print-ca-footer">
-  <div class="print-signature-block">
-    <p class="print-signature-line">Class Teacher's Signature</p>
-  </div>
-  <div class="print-signature-block">
-    <p class="print-signature-line">Principal's Signature</p>
-  </div>
-</footer>
+    <div class="report-card-principal-box">
+      <h3 class="report-card-principal-title">Principal's Comment</h3>
+      <p class="report-card-principal-text"><%= summary.principalComment %></p>
+    </div>
+  </section>
+
+  <footer class="report-card-footer">
+    <div class="report-card-signature">
+      <div class="report-card-signature-line"></div>
+      <p>Signature of Class Teacher</p>
+    </div>
+
+    <div class="report-card-signature">
+      <div class="report-card-signature-line"></div>
+      <p>Signature of Principal</p>
+    </div>
+  </footer>
+</article>
 
 <% if (typeof showPrintButton !== 'undefined' && showPrintButton) { %>
   <div class="student-result-actions no-print">
