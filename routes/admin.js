@@ -15,6 +15,7 @@ const { parseStudentRows, buildImportTemplateBuffer } = require('../utils/studen
 const { generateLoginPassword } = require('../utils/passwordHelpers');
 const { CLASS_LEVELS, ARMS, TERMS } = require('../config/schoolLevels');
 const { buildCredentials, filterCredentials } = require('../utils/credentialHelpers');
+const { getFeeAccess, normalizeFeeStatus } = require('../utils/feeHelpers');
 
 async function normalizeStaffAssignments(staff) {
   if (staff.classAssignments?.length) return staff.classAssignments;
@@ -1081,6 +1082,100 @@ router.post('/promotion', requireAdmin, async (req, res, next) => {
 
     const success = `Promoted ${result.modifiedCount} student(s) from ${fromClass} Arm ${fromArm} to ${toClass} Arm ${toArm}.`;
     res.redirect(`/slc-admin/promotion?fromClass=${encodeURIComponent(fromClass)}&fromArm=${encodeURIComponent(fromArm)}&success=${encodeURIComponent(success)}`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ----- School Fees Status ----- */
+async function renderFeesPage(res, data = {}) {
+  const classLevel = data.classLevel || '';
+  const arm = data.arm || '';
+  let students = [];
+
+  if (classLevel && arm) {
+    const rows = await User.find({ classLevel, arm })
+      .select('studentId firstName middleName lastName classLevel arm feeStatus')
+      .sort({ lastName: 1, firstName: 1 });
+
+    students = rows.map((student) => ({
+      ...student.toObject(),
+      access: getFeeAccess(student)
+    }));
+  }
+
+  renderAdmin(res, 'admin/fees', {
+    title: 'School Fees Status',
+    pageTitle: 'School Fees Status',
+    activeSection: 'fees',
+    classLevels: CLASS_LEVELS,
+    arms: ARMS,
+    classLevel,
+    arm,
+    students,
+    searchPlaceholder: 'Search by ID, name, fee status or access...',
+    error: data.error || null,
+    success: data.success || null
+  });
+}
+
+router.get('/fees', requireAdmin, async (req, res, next) => {
+  try {
+    await renderFeesPage(res, {
+      classLevel: req.query.classLevel?.trim() || '',
+      arm: req.query.arm?.trim() || '',
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/fees', requireAdmin, async (req, res, next) => {
+  try {
+    const classLevel = req.body.classLevel?.trim() || '';
+    const arm = req.body.arm?.trim() || '';
+    const feeStatuses = req.body.feeStatus || {};
+
+    if (!classLevel || !arm) {
+      return renderFeesPage(res, {
+        error: 'Select a class level and arm first.'
+      });
+    }
+
+    if (!CLASS_LEVELS.includes(classLevel) || !ARMS.includes(arm)) {
+      return renderFeesPage(res, {
+        classLevel,
+        arm,
+        error: 'Invalid class level or arm selected.'
+      });
+    }
+
+    const entries = Object.entries(feeStatuses);
+    if (!entries.length) {
+      return renderFeesPage(res, {
+        classLevel,
+        arm,
+        error: 'No fee status changes to save.'
+      });
+    }
+
+    let updatedCount = 0;
+    for (const [studentId, statusValue] of entries) {
+      const feeStatus = normalizeFeeStatus(statusValue);
+      const result = await User.updateOne(
+        { _id: studentId, classLevel, arm },
+        { $set: { feeStatus } }
+      );
+      if (result.modifiedCount) updatedCount += 1;
+    }
+
+    const success = updatedCount
+      ? `Updated fee status for ${updatedCount} student(s) in ${classLevel} Arm ${arm}.`
+      : `Fee status saved for ${classLevel} Arm ${arm}.`;
+
+    res.redirect(`/slc-admin/fees?classLevel=${encodeURIComponent(classLevel)}&arm=${encodeURIComponent(arm)}&success=${encodeURIComponent(success)}`);
   } catch (err) {
     next(err);
   }

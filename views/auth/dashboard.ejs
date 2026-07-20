@@ -40,6 +40,8 @@
       <p>No sessions available yet. Please check back later.</p>
     <% } else if (!hasSelection) { %>
       <p class="admin-form-note">Select a session, then click <strong>View Results</strong> to see your scores.</p>
+    <% } else if (feesBlocked) { %>
+      <p class="student-fees-blocked">please contact the school bursar</p>
     <% } else if (resultView && resultView.subjectResults.length) { %>
       <section class="print-only print-ca-sheet student-terminal-report student-terminal-report--embedded no-print-chrome">
         <%- include('partials/student-result-sheet', {

@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   lastName: String,
   classLevel: String,
   arm: String,
+  feeStatus: { type: String, enum: ['paid', 'owing'], default: 'paid' },
   offeredSubjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
   results: [{
     subject: String,

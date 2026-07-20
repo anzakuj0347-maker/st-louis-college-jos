@@ -1191,6 +1191,50 @@ a:hover { color: var(--msm-red-dark); }
   color: var(--text-muted);
 }
 
+.fees-bulk-actions {
+  margin-bottom: 1rem;
+}
+
+.fee-status-select {
+  min-width: 6.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.92rem;
+  background: var(--white);
+}
+
+.fee-access-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fee-access-badge--allowed {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.fee-access-badge--blocked {
+  background: #fdecea;
+  color: #b71c1c;
+}
+
+.student-fees-blocked {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #b71c1c;
+  background: #fdecea;
+  border-left: 4px solid #b71c1c;
+  border-radius: 2px;
+}
+
 .admin-form-full {
   grid-column: 1 / -1;
 }

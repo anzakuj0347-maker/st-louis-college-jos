@@ -18,6 +18,7 @@ const {
   parseSessionPeriod,
   sessionPeriodKey
 } = require('../utils/sessionHelpers');
+const { isResultAccessible } = require('../utils/feeHelpers');
 
 router.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/results/dashboard');
@@ -69,8 +70,9 @@ router.get('/dashboard', async (req, res, next) => {
 
     const hasSelection = Boolean(term && session);
     let resultView = null;
+    const feesBlocked = hasSelection && !isResultAccessible(user);
 
-    if (hasSelection) {
+    if (hasSelection && !feesBlocked) {
       resultView = await buildStudentResultView(Result, User, user, { term, session });
       resultView.qr = await buildResultQrForStudent(req, resultView);
     }
@@ -83,7 +85,8 @@ router.get('/dashboard', async (req, res, next) => {
       sessionOptions,
       selectedPeriod,
       hasSelection,
-      canPrint: hasSelection,
+      canPrint: hasSelection && !feesBlocked,
+      feesBlocked,
       resultView
     });
   } catch (err) {
@@ -105,8 +108,9 @@ router.get('/qr', async (req, res, next) => {
 
     if (req.session.user) {
       user = await User.findById(req.session.user.id)
-        .select('studentId firstName middleName lastName classLevel arm');
+        .select('studentId firstName middleName lastName classLevel arm feeStatus');
       if (!user) return res.status(401).end();
+      if (!isResultAccessible(user)) return res.status(403).end();
       if (requestedStudentId && requestedStudentId !== user.studentId) {
         return res.status(403).end();
       }
@@ -162,10 +166,15 @@ router.get('/print', async (req, res, next) => {
     }
 
     const user = await User.findById(req.session.user.id)
-      .select('studentId firstName middleName lastName classLevel arm');
+      .select('studentId firstName middleName lastName classLevel arm feeStatus');
     if (!user) {
       req.session.destroy();
       return res.redirect('/results/login');
+    }
+
+    if (!isResultAccessible(user)) {
+      const period = sessionPeriodKey(session, term);
+      return res.redirect(`/results/dashboard?period=${encodeURIComponent(period)}&feesBlocked=1`);
     }
 
     const resultView = await buildStudentResultView(Result, User, user, { term, session });
