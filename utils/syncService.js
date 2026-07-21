@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { connectRemoteWithFallback, prepareAtlasDns } = require('./atlasUri');
+const { readSyncState, markSyncCompleted } = require('./syncState');
 
 const COLLECTIONS = {
   subjects: { uniqueKey: 'code' },
@@ -37,7 +38,90 @@ const SYNC_STEP_LABELS = {
 };
 
 const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'events', 'news', 'results'];
-const SYNC_PREVIEW_TIMEOUT_MS = 20000;
+const SYNC_PREVIEW_TIMEOUT_MS = 15000;
+const SYNC_BATCH_SIZE = 100;
+
+function getLocalSyncQuery(lastSyncedAt) {
+  if (!lastSyncedAt) return {};
+  return { updatedAt: { $gt: lastSyncedAt } };
+}
+
+function getRecordKey(doc, config) {
+  if (config.compoundUniqueKeys?.length) {
+    return config.compoundUniqueKeys
+      .map((key) => {
+        if (key === 'term') return doc[key] || 'First Term';
+        if (key === 'eventDate' || key === 'publishedAt') {
+          return new Date(doc[key]).toISOString();
+        }
+        return String(doc[key] ?? '');
+      })
+      .join('||');
+  }
+
+  return String(doc[config.uniqueKey] ?? '');
+}
+
+async function countCollectionPending(localCol, lastSyncedAt) {
+  if (!lastSyncedAt) {
+    const total = await localCol.countDocuments();
+    return { created: total, updated: 0 };
+  }
+
+  const pending = await localCol.countDocuments(getLocalSyncQuery(lastSyncedAt));
+  return { created: 0, updated: pending };
+}
+
+async function getIncrementalPreviewCounts(localConn, lastSyncedAt) {
+  const counts = {};
+
+  for (const name of Object.keys(COLLECTIONS)) {
+    counts[name] = await countCollectionPending(localConn.collection(name), lastSyncedAt);
+  }
+
+  const totals = Object.values(counts).reduce(
+    (acc, item) => ({
+      created: acc.created + item.created,
+      updated: acc.updated + item.updated
+    }),
+    { created: 0, updated: 0 }
+  );
+
+  return { counts, totals, incremental: Boolean(lastSyncedAt) };
+}
+
+async function buildRemoteLookupMap(remoteCol, config) {
+  const docs = await remoteCol.find({}).toArray();
+  const map = new Map();
+
+  for (const doc of docs) {
+    map.set(getRecordKey(doc, config), doc);
+  }
+
+  return map;
+}
+
+async function buildIdMapBulk(localCol, remoteCol, keyField) {
+  const map = new Map();
+  const [localDocs, remoteDocs] = await Promise.all([
+    localCol.find({}, { projection: { [keyField]: 1 } }).toArray(),
+    remoteCol.find({}, { projection: { _id: 1, [keyField]: 1 } }).toArray()
+  ]);
+
+  const remoteByKey = new Map();
+  for (const doc of remoteDocs) {
+    if (doc[keyField] == null) continue;
+    remoteByKey.set(String(doc[keyField]), doc._id);
+  }
+
+  for (const doc of localDocs) {
+    if (doc[keyField] == null) continue;
+    const remoteId = remoteByKey.get(String(doc[keyField]));
+    if (remoteId) map.set(toIdString(doc._id), remoteId);
+  }
+
+  return map;
+}
 
 function withTimeout(promise, ms, message) {
   let timer;
@@ -270,6 +354,8 @@ function documentsNeedSync(localDoc, remoteDoc, config, idMaps, context = {}) {
   }
 
   if (config.uniqueKey === 'studentId' && config.refFields) {
+    if (String(localDoc.feeStatus || 'paid') !== String(remoteDoc.feeStatus || 'paid')) return true;
+
     const remappedOffers = remapRefArray(localDoc.offeredSubjects, idMaps.subjects || new Map());
     const remoteOffers = sortedIdStrings(remoteDoc.offeredSubjects);
     if (remappedOffers.join('|') !== remoteOffers.join('|')) return true;
@@ -296,20 +382,8 @@ function documentsNeedSync(localDoc, remoteDoc, config, idMaps, context = {}) {
   return false;
 }
 
-async function buildIdMap(localCol, remoteCol, localKeyField, remoteKeyField) {
-  const map = new Map();
-  const localDocs = await localCol.find({}, { projection: { [localKeyField]: 1 } }).toArray();
-
-  for (const doc of localDocs) {
-    const keyValue = doc[localKeyField];
-    if (keyValue == null) continue;
-    const remoteDoc = await remoteCol.findOne({ [remoteKeyField]: keyValue }, { projection: { _id: 1 } });
-    if (remoteDoc) {
-      map.set(toIdString(doc._id), remoteDoc._id);
-    }
-  }
-
-  return map;
+async function buildIdMap(localCol, remoteCol, localKeyField) {
+  return buildIdMapBulk(localCol, remoteCol, localKeyField);
 }
 
 async function resolveSubjectId(localCol, remoteCol, localId) {
@@ -448,19 +522,29 @@ async function syncSessionDeletions(localCol, remoteCol) {
   return deleted;
 }
 
-async function syncAcademicSessions(localCol, remoteCol, config, idMaps) {
+async function syncAcademicSessions(localCol, remoteCol, config, idMaps, lastSyncedAt) {
   const stats = { created: 0, updated: 0, skipped: 0, deleted: 0 };
-  const localDocs = await localCol.find().toArray();
+  const remoteLookup = await buildRemoteLookupMap(remoteCol, config);
+  const localDocs = await localCol.find(getLocalSyncQuery(lastSyncedAt)).toArray();
 
   for (const doc of localDocs) {
     const uniqueFilter = getUniqueFilter(doc, config);
-    const remoteDoc = await remoteCol.findOne(uniqueFilter);
+    const remoteDoc = remoteLookup.get(getRecordKey(doc, config));
+    const shouldSync = documentsNeedSync(doc, remoteDoc, config, idMaps);
+
+    if (!shouldSync) {
+      stats.skipped += 1;
+      if (remoteDoc && idMaps.academicsessions) {
+        idMaps.academicsessions.set(toIdString(doc._id), remoteDoc._id);
+      }
+      continue;
+    }
 
     const payload = { ...doc };
     delete payload._id;
 
     const result = await remoteCol.updateOne(uniqueFilter, { $set: payload }, { upsert: true });
-    const syncedDoc = await remoteCol.findOne(uniqueFilter);
+    const syncedDoc = remoteDoc || (result.upsertedId ? { _id: result.upsertedId } : await remoteCol.findOne(uniqueFilter));
 
     if (syncedDoc && idMaps.academicsessions) {
       idMaps.academicsessions.set(toIdString(doc._id), syncedDoc._id);
@@ -470,17 +554,28 @@ async function syncAcademicSessions(localCol, remoteCol, config, idMaps) {
     else stats.updated += 1;
   }
 
-  stats.deleted = await syncSessionDeletions(localCol, remoteCol);
+  if (!lastSyncedAt) {
+    stats.deleted = await syncSessionDeletions(localCol, remoteCol);
+  }
+
   return stats;
 }
 
-async function syncContentCollection(localCol, remoteCol, config, recordKeyFn) {
+async function syncContentCollection(localCol, remoteCol, config, recordKeyFn, lastSyncedAt) {
   const stats = { created: 0, updated: 0, skipped: 0, deleted: 0 };
-  const localDocs = await localCol.find().toArray();
+  const remoteLookup = await buildRemoteLookupMap(remoteCol, config);
+  const localDocs = await localCol.find(getLocalSyncQuery(lastSyncedAt)).toArray();
   const localKeys = new Set();
 
   for (const doc of localDocs) {
     localKeys.add(recordKeyFn(doc));
+    const remoteDoc = remoteLookup.get(getRecordKey(doc, config));
+
+    if (!documentsNeedSync(doc, remoteDoc, config)) {
+      stats.skipped += 1;
+      continue;
+    }
+
     const uniqueFilter = getUniqueFilter(doc, config);
     const payload = { ...doc };
     delete payload._id;
@@ -490,11 +585,13 @@ async function syncContentCollection(localCol, remoteCol, config, recordKeyFn) {
     else stats.updated += 1;
   }
 
-  const remoteDocs = await remoteCol.find().toArray();
-  for (const doc of remoteDocs) {
-    if (!localKeys.has(recordKeyFn(doc))) {
-      await remoteCol.deleteOne({ _id: doc._id });
-      stats.deleted += 1;
+  if (!lastSyncedAt) {
+    const remoteDocs = await remoteCol.find({}, { projection: { title: 1, eventDate: 1, publishedAt: 1 } }).toArray();
+    for (const doc of remoteDocs) {
+      if (!localKeys.has(recordKeyFn(doc))) {
+        await remoteCol.deleteOne({ _id: doc._id });
+        stats.deleted += 1;
+      }
     }
   }
 
@@ -534,19 +631,32 @@ async function ensureRemoteSessionIndexes(remoteConn) {
   }
 }
 
-async function syncSimpleCollection(localCol, remoteCol, config, idMaps, context = {}) {
+async function syncSimpleCollection(localCol, remoteCol, config, idMaps, context = {}, lastSyncedAt = null) {
   const stats = { created: 0, updated: 0, skipped: 0 };
-  const localDocs = await localCol.find().toArray();
+  const remoteLookup = await buildRemoteLookupMap(remoteCol, config);
+  const localDocs = await localCol.find(getLocalSyncQuery(lastSyncedAt)).toArray();
+  const collectionName = localCol.collectionName;
+  const pendingWrites = [];
+
+  const flushWrites = async () => {
+    if (!pendingWrites.length) return;
+
+    const batch = pendingWrites.splice(0, pendingWrites.length);
+    const result = await remoteCol.bulkWrite(batch, { ordered: false });
+
+    stats.created += result.upsertedCount || Object.keys(result.upsertedIds || {}).length;
+    stats.updated += result.modifiedCount || 0;
+  };
 
   for (const doc of localDocs) {
     const uniqueFilter = getUniqueFilter(doc, config);
-    const remoteDoc = await remoteCol.findOne(uniqueFilter);
+    const remoteDoc = remoteLookup.get(getRecordKey(doc, config));
     const shouldSync = documentsNeedSync(doc, remoteDoc, config, idMaps, context);
 
     if (!shouldSync) {
       stats.skipped += 1;
-      if (remoteDoc && idMaps[localCol.collectionName]) {
-        idMaps[localCol.collectionName].set(toIdString(doc._id), remoteDoc._id);
+      if (remoteDoc && idMaps[collectionName]) {
+        idMaps[collectionName].set(toIdString(doc._id), remoteDoc._id);
       }
       continue;
     }
@@ -562,31 +672,73 @@ async function syncSimpleCollection(localCol, remoteCol, config, idMaps, context
       payload.offeredSubjects = payload.offeredSubjects.filter(Boolean);
     }
 
-    const result = await remoteCol.updateOne(
-      uniqueFilter,
-      { $set: payload },
-      { upsert: true }
-    );
+    pendingWrites.push({
+      updateOne: {
+        filter: uniqueFilter,
+        update: { $set: payload },
+        upsert: true
+      }
+    });
 
-    const syncedDoc = await remoteCol.findOne(uniqueFilter);
-    if (syncedDoc && idMaps[localCol.collectionName]) {
-      idMaps[localCol.collectionName].set(toIdString(doc._id), syncedDoc._id);
+    if (pendingWrites.length >= SYNC_BATCH_SIZE) {
+      await flushWrites();
     }
 
-    if (result.upsertedCount > 0) stats.created += 1;
-    else stats.updated += 1;
+    if (remoteDoc && idMaps[collectionName]) {
+      idMaps[collectionName].set(toIdString(doc._id), remoteDoc._id);
+    }
   }
 
+  await flushWrites();
   return stats;
 }
 
-async function syncResults(localCol, remoteCol, context) {
+async function buildResultSyncContext(localConn, remoteConn) {
+  const [localUserDocs, localSubjectDocs, remoteResultDocs] = await Promise.all([
+    localConn.collection('users').find({}, { projection: { studentId: 1 } }).toArray(),
+    localConn.collection('subjects').find({}, { projection: { code: 1 } }).toArray(),
+    remoteConn.collection('results').find({}, {
+      projection: { student: 1, subject: 1, term: 1, session: 1, arm: 1, updatedAt: 1 }
+    }).toArray()
+  ]);
+
+  const localUserStudentId = new Map(localUserDocs.map((doc) => [toIdString(doc._id), doc.studentId]));
+  const localSubjectCode = new Map(localSubjectDocs.map((doc) => [toIdString(doc._id), doc.code]));
+  const remoteResultMap = new Map();
+
+  for (const doc of remoteResultDocs) {
+    remoteResultMap.set(
+      `${toIdString(doc.student)}|${toIdString(doc.subject)}|${doc.term}|${doc.session}|${doc.arm}`,
+      doc
+    );
+  }
+
+  return { localUserStudentId, localSubjectCode, remoteResultMap };
+}
+
+function resultLookupKey(remoteStudentId, remoteSubjectId, doc) {
+  return `${toIdString(remoteStudentId)}|${toIdString(remoteSubjectId)}|${doc.term}|${doc.session}|${doc.arm}`;
+}
+
+async function syncResults(localCol, remoteCol, context, idMaps, lastSyncedAt, localConn, remoteConn) {
   const stats = { created: 0, updated: 0, skipped: 0 };
-  const localDocs = await localCol.find().toArray();
+  const resultContext = await buildResultSyncContext(localConn, remoteConn);
+  const localDocs = await localCol.find(getLocalSyncQuery(lastSyncedAt)).toArray();
+  const pendingWrites = [];
+
+  const flushWrites = async () => {
+    if (!pendingWrites.length) return;
+
+    const batch = pendingWrites.splice(0, pendingWrites.length);
+    const result = await remoteCol.bulkWrite(batch, { ordered: false });
+
+    stats.created += result.upsertedCount || Object.keys(result.upsertedIds || {}).length;
+    stats.updated += result.modifiedCount || 0;
+  };
 
   for (const doc of localDocs) {
-    const remoteStudentId = await resolveUserId(context.localUsers, context.remoteUsers, doc.student);
-    const remoteSubjectId = await resolveSubjectId(context.localSubjects, context.remoteSubjects, doc.subject);
+    const remoteStudentId = idMaps.users?.get(toIdString(doc.student));
+    const remoteSubjectId = idMaps.subjects?.get(toIdString(doc.subject));
 
     if (!remoteStudentId || !remoteSubjectId) {
       stats.skipped += 1;
@@ -601,7 +753,9 @@ async function syncResults(localCol, remoteCol, context) {
       arm: doc.arm
     };
 
-    const remoteDoc = await remoteCol.findOne(filter);
+    const remoteDoc = resultContext.remoteResultMap.get(
+      resultLookupKey(remoteStudentId, remoteSubjectId, doc)
+    );
     const shouldSync = !remoteDoc || isNewer(doc.updatedAt, remoteDoc.updatedAt);
 
     if (!shouldSync) {
@@ -614,11 +768,20 @@ async function syncResults(localCol, remoteCol, context) {
     payload.student = remoteStudentId;
     payload.subject = remoteSubjectId;
 
-    const result = await remoteCol.updateOne(filter, { $set: payload }, { upsert: true });
-    if (result.upsertedCount > 0) stats.created += 1;
-    else stats.updated += 1;
+    pendingWrites.push({
+      updateOne: {
+        filter,
+        update: { $set: payload },
+        upsert: true
+      }
+    });
+
+    if (pendingWrites.length >= SYNC_BATCH_SIZE) {
+      await flushWrites();
+    }
   }
 
+  await flushWrites();
   return stats;
 }
 
@@ -664,92 +827,14 @@ async function getSyncPreview() {
   }
 
   try {
+    const { lastSyncedAt } = readSyncState();
     const data = await withTimeout(
-      withConnections(async (localConn, remoteConn) => {
-        await ensureRemoteSessionIndexes(remoteConn);
-
-        const context = {
-          localSubjects: localConn.collection('subjects'),
-          remoteSubjects: remoteConn.collection('subjects'),
-          localUsers: localConn.collection('users'),
-          remoteUsers: remoteConn.collection('users')
-        };
-
-        const idMaps = {
-          subjects: await buildIdMap(context.localSubjects, context.remoteSubjects, 'code', 'code'),
-          users: await buildIdMap(context.localUsers, context.remoteUsers, 'studentId', 'studentId'),
-          staffs: new Map()
-        };
-
-        context.validRemoteSubjectIds = await buildValidRemoteSubjectIds(context.remoteSubjects);
-
-        const counts = {};
-
-        for (const [name, config] of Object.entries(COLLECTIONS)) {
-          if (name === 'academicsessions') {
-            const localCol = localConn.collection(name);
-            const remoteCol = remoteConn.collection(name);
-            const localDocs = await localCol.find({}, { projection: { name: 1, term: 1 } }).toArray();
-            let created = 0;
-            let updated = 0;
-
-            for (const doc of localDocs) {
-              const remoteDoc = await remoteCol.findOne(getUniqueFilter(doc, config));
-              if (!remoteDoc) created += 1;
-              else updated += 1;
-            }
-
-            counts[name] = {
-              created,
-              updated,
-              deleted: await countRemoteSessionDeletions(localCol, remoteCol)
-            };
-            continue;
-          }
-
-          if (name === 'events') {
-            const localCol = localConn.collection(name);
-            const remoteCol = remoteConn.collection(name);
-            const localDocs = await localCol.find().toArray();
-            counts[name] = {
-              created: 0,
-              updated: localDocs.length,
-              deleted: await countRemoteContentDeletions(localCol, remoteCol, eventRecordKey)
-            };
-            continue;
-          }
-
-          if (name === 'news') {
-            const localCol = localConn.collection(name);
-            const remoteCol = remoteConn.collection(name);
-            const localDocs = await localCol.find().toArray();
-            counts[name] = {
-              created: 0,
-              updated: localDocs.length,
-              deleted: await countRemoteContentDeletions(localCol, remoteCol, newsRecordKey)
-            };
-            continue;
-          }
-
-          counts[name] = await countPendingForCollection(
-            localConn.collection(name),
-            remoteConn.collection(name),
-            config,
-            idMaps,
-            context
-          );
+      openConnection(getLocalUri()).then(async (localConn) => {
+        try {
+          return await getIncrementalPreviewCounts(localConn, lastSyncedAt);
+        } finally {
+          await localConn.close().catch(() => {});
         }
-
-        const totals = Object.values(counts).reduce(
-          (acc, item) => ({
-            created: acc.created + item.created,
-            updated: acc.updated + item.updated,
-            deleted: acc.deleted + (item.deleted || 0)
-          }),
-          { created: 0, updated: 0, deleted: 0 }
-        );
-
-        return { counts, totals };
       }),
       SYNC_PREVIEW_TIMEOUT_MS,
       'Preview timed out while counting pending changes'
@@ -761,6 +846,8 @@ async function getSyncPreview() {
       canSubmit: true,
       localConnected: true,
       remoteConnected: true,
+      incremental: data.incremental,
+      lastSyncedAt,
       counts: data.counts,
       totals: data.totals
     });
@@ -815,6 +902,9 @@ async function runSync(onProgress) {
 
   report(SYNC_STEP_LABELS.connect, { collection: 'connect' });
 
+  const syncStartedAt = new Date();
+  const { lastSyncedAt } = readSyncState();
+
   return withConnections(async (localConn, remoteConn) => {
     await ensureRemoteSessionIndexes(remoteConn);
 
@@ -840,7 +930,9 @@ async function runSync(onProgress) {
       localConn.collection('subjects'),
       remoteConn.collection('subjects'),
       COLLECTIONS.subjects,
-      idMaps
+      idMaps,
+      {},
+      lastSyncedAt
     );
 
     step = 2;
@@ -849,10 +941,11 @@ async function runSync(onProgress) {
       localConn.collection('academicsessions'),
       remoteConn.collection('academicsessions'),
       COLLECTIONS.academicsessions,
-      idMaps
+      idMaps,
+      lastSyncedAt
     );
 
-    idMaps.subjects = await buildIdMap(context.localSubjects, context.remoteSubjects, 'code', 'code');
+    idMaps.subjects = await buildIdMap(context.localSubjects, context.remoteSubjects, 'code');
     context.validRemoteSubjectIds = await buildValidRemoteSubjectIds(context.remoteSubjects);
 
     step = 3;
@@ -862,10 +955,11 @@ async function runSync(onProgress) {
       remoteConn.collection('users'),
       COLLECTIONS.users,
       idMaps,
-      context
+      context,
+      lastSyncedAt
     );
 
-    idMaps.users = await buildIdMap(context.localUsers, context.remoteUsers, 'studentId', 'studentId');
+    idMaps.users = await buildIdMap(context.localUsers, context.remoteUsers, 'studentId');
 
     step = 4;
     report(`Syncing ${SYNC_STEP_LABELS.staffs}...`, { collection: 'staffs' });
@@ -874,7 +968,8 @@ async function runSync(onProgress) {
       remoteConn.collection('staffs'),
       COLLECTIONS.staffs,
       idMaps,
-      context
+      context,
+      lastSyncedAt
     );
 
     step = 5;
@@ -883,7 +978,9 @@ async function runSync(onProgress) {
       localConn.collection('heroslides'),
       remoteConn.collection('heroslides'),
       COLLECTIONS.heroslides,
-      idMaps
+      idMaps,
+      {},
+      lastSyncedAt
     );
 
     step = 6;
@@ -892,7 +989,8 @@ async function runSync(onProgress) {
       localConn.collection('events'),
       remoteConn.collection('events'),
       COLLECTIONS.events,
-      eventRecordKey
+      eventRecordKey,
+      lastSyncedAt
     );
 
     step = 7;
@@ -901,7 +999,8 @@ async function runSync(onProgress) {
       localConn.collection('news'),
       remoteConn.collection('news'),
       COLLECTIONS.news,
-      newsRecordKey
+      newsRecordKey,
+      lastSyncedAt
     );
 
     step = 8;
@@ -909,7 +1008,11 @@ async function runSync(onProgress) {
     results.results = await syncResults(
       localConn.collection('results'),
       remoteConn.collection('results'),
-      context
+      context,
+      idMaps,
+      lastSyncedAt,
+      localConn,
+      remoteConn
     );
 
     step = totalSteps;
@@ -923,7 +1026,9 @@ async function runSync(onProgress) {
       { created: 0, updated: 0, skipped: 0, deleted: 0 }
     );
 
-    const payload = { results, totals, syncedAt: new Date() };
+    markSyncCompleted(syncStartedAt);
+
+    const payload = { results, totals, syncedAt: syncStartedAt, incremental: Boolean(lastSyncedAt) };
 
     if (onProgress) {
       onProgress({

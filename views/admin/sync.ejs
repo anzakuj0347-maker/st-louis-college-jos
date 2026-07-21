@@ -72,7 +72,11 @@
       <div class="admin-panel sync-action-panel">
         <h2 class="admin-panel-title">Pending Changes</h2>
         <% if (preview.connected) { %>
-          <p>Records in your local database that are new or newer than the online copy.</p>
+          <% if (preview.incremental && preview.lastSyncedAt) { %>
+            <p>Showing local records created or changed since the last sync on <strong><%= preview.lastSyncedAt.toLocaleString() %></strong>.</p>
+          <% } else { %>
+            <p>First sync will push all local records. After that, only new or changed records are sent.</p>
+          <% } %>
         <% } else if (preview.showLocalTotals) { %>
           <p>Local records waiting to be pushed once Atlas is connected (shown as “New” below).</p>
         <% } else { %>
@@ -128,7 +132,7 @@
             </button>
           </div>
           <% if (preview.canSubmit && pendingTotal === 0) { %>
-            <p class="sync-hint">No pending changes detected, but you can still sync to verify the connection.</p>
+            <p class="sync-hint">No new or updated local records since the last sync. Unchanged records on Atlas are left as they are.</p>
           <% } else if (preview.onRender) { %>
             <p class="sync-hint">This button only works on <strong>http://localhost:3000</strong>, not on your Render website.</p>
           <% } else if (!preview.localConnected) { %>
@@ -190,7 +194,7 @@
           <li><strong>While offline:</strong> keep <code>LOCAL_MONGODB_URI</code> in <code>.env</code>, run <code>start-mongodb.bat</code>, then <code>npm start</code>, and add your data.</li>
           <li><strong>When back online:</strong> make sure <code>REMOTE_MONGODB_URI</code> has your Atlas connection string and your IP is allowed in Atlas.</li>
           <li>Open <strong>http://localhost:3000/slc-admin/sync</strong> on your computer (not Render).</li>
-          <li>Click <strong>Synchronise Now</strong> to push local changes to Atlas.</li>
+          <li>Click <strong>Synchronise Now</strong> to push only new or updated local records to Atlas.</li>
         </ol>
       </div>
     </div>
