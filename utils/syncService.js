@@ -21,6 +21,7 @@ const COLLECTIONS = {
     ]
   },
   heroslides: { uniqueKey: 'order' },
+  pages: { uniqueKey: 'slug' },
   events: { compoundUniqueKeys: ['title', 'eventDate'] },
   news: { compoundUniqueKeys: ['title', 'publishedAt'] }
 };
@@ -32,12 +33,13 @@ const SYNC_STEP_LABELS = {
   users: 'Students',
   staffs: 'Staff',
   heroslides: 'Hero slides',
+  pages: 'Pages',
   events: 'Events',
   news: 'News',
   results: 'Results'
 };
 
-const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'events', 'news', 'results'];
+const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'pages', 'events', 'news', 'results'];
 const SYNC_PREVIEW_TIMEOUT_MS = 15000;
 const SYNC_BATCH_SIZE = 100;
 
@@ -351,6 +353,12 @@ function documentsNeedSync(localDoc, remoteDoc, config, idMaps, context = {}) {
     }
     if (Boolean(localDoc.featured) !== Boolean(remoteDoc.featured)) return true;
     if (new Date(localDoc.publishedAt).getTime() !== new Date(remoteDoc.publishedAt).getTime()) return true;
+  }
+
+  if (config.uniqueKey === 'slug') {
+    for (const field of ['title', 'section', 'content']) {
+      if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
+    }
   }
 
   if (config.uniqueKey === 'studentId' && config.refFields) {
@@ -1004,6 +1012,17 @@ async function runSync(onProgress) {
     );
 
     step = 8;
+    report(`Syncing ${SYNC_STEP_LABELS.pages}...`, { collection: 'pages' });
+    results.pages = await syncSimpleCollection(
+      localConn.collection('pages'),
+      remoteConn.collection('pages'),
+      COLLECTIONS.pages,
+      idMaps,
+      {},
+      lastSyncedAt
+    );
+
+    step = 9;
     report(`Syncing ${SYNC_STEP_LABELS.results}...`, { collection: 'results' });
     results.results = await syncResults(
       localConn.collection('results'),

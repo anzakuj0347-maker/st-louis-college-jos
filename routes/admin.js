@@ -3,7 +3,7 @@ const multer = require('multer');
 const router = express.Router();
 const adminNav = require('../config/adminNav');
 const { requireAdmin } = require('../middleware/adminAuth');
-const { getSyncPreview, runSync, isSyncAvailable } = require('../utils/syncService');
+const { getSyncPreview, runSync, isSyncAvailable, SYNC_STEP_LABELS } = require('../utils/syncService');
 const Admin = require('../models/Admin');
 const Subject = require('../models/Subject');
 const User = require('../models/User');
@@ -915,7 +915,7 @@ router.post('/sync/run', requireAdmin, async (req, res) => {
       return res.end();
     }
 
-    send({ type: 'progress', percent: 0, message: 'Starting synchronisation...', step: 0, totalSteps: 7 });
+    send({ type: 'progress', percent: 0, message: 'Starting synchronisation...', step: 0, totalSteps: Object.keys(SYNC_STEP_LABELS).length });
 
     const syncResult = await runSync((progress) => {
       send({ type: 'progress', ...progress });
