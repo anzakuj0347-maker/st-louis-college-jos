@@ -11,6 +11,7 @@ const Subject = require('../models/Subject');
 const Staff = require('../models/Staff');
 const Result = require('../models/Result');
 const AcademicSession = require('../models/AcademicSession');
+const leadershipContent = require('../config/leadershipContent');
 
 const pages = [
   {
@@ -50,11 +51,7 @@ Our pride eternally.
     slug: 'school-leadership',
     title: 'School Leadership',
     section: 'about',
-    content: `<h3>Principal</h3><p>Sr. [Name], SSL — Principal</p>
-<h3>Vice Principal (Administration)</h3><p>Mrs. [Name]</p>
-<h3>Vice Principal (Academics)</h3><p>Mrs. [Name]</p>
-<h3>Bursar</h3><p>Mr./Mrs. [Name]</p>
-<p><em>Leadership profiles can be updated with official names and photographs.</em></p>`
+    content: leadershipContent
   },
   {
     slug: 'jss',

@@ -32,6 +32,34 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-wrap: break-word;
   min-width: 0;
+  position: relative;
+}
+
+/* School logo watermark — all pages except home */
+body:not(.home-page)::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: min(50vw, 380px);
+  height: min(50vw, 380px);
+  transform: translate(-50%, -50%);
+  background: url('/images/logo.jpg') center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body:not(.home-page) > * {
+  position: relative;
+  z-index: 1;
+}
+
+body:has(.student-report-card)::before,
+body:has(.print-ca-sheet)::before,
+body:has(.password-print-view)::before,
+body.print-result-page::before {
+  display: none;
 }
 
 img {
@@ -692,6 +720,48 @@ a:hover { color: var(--msm-red-dark); }
   font-size: 1.05rem;
   line-height: 1.9;
   overflow-x: auto;
+}
+
+.content-body:has(.leadership-grid) {
+  max-width: 960px;
+}
+
+.leadership-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.leadership-card {
+  text-align: center;
+}
+
+.leadership-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  color: var(--royal-blue);
+}
+
+.leadership-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.leadership-photo {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  margin: 0 auto 1rem;
+  display: block;
+  background: var(--off-white);
+  box-shadow: 0 2px 8px rgba(0, 48, 135, 0.08);
 }
 
 .data-table {
@@ -1744,6 +1814,30 @@ a:hover { color: var(--msm-red-dark); }
   padding: 0.35in;
 }
 
+.password-print-page {
+  position: relative;
+  isolation: isolate;
+}
+
+.password-print-page::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(55%, 360px);
+  height: min(55%, 360px);
+  transform: translate(-50%, -50%);
+  background: url('/images/logo.jpg') center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.password-print-page > * {
+  position: relative;
+  z-index: 1;
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -1905,6 +1999,27 @@ a:hover { color: var(--msm-red-dark); }
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  position: relative;
+  isolation: isolate;
+}
+
+.student-report-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(72%, 340px);
+  height: min(72%, 340px);
+  transform: translate(-50%, -50%);
+  background: url('/images/logo.jpg') center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.student-report-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .report-card-top {
@@ -2315,6 +2430,30 @@ a:hover { color: var(--msm-red-dark); }
   box-sizing: border-box;
 }
 
+.print-ca-sheet {
+  position: relative;
+  isolation: isolate;
+}
+
+.print-ca-sheet::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(58%, 380px);
+  height: min(58%, 380px);
+  transform: translate(-50%, -50%);
+  background: url('/images/logo.jpg') center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.print-ca-sheet > * {
+  position: relative;
+  z-index: 1;
+}
+
 .print-school-logo {
   width: 72px;
   height: 72px;
@@ -2692,6 +2831,14 @@ body.print-result-page .report-card-summary-qr-code {
   @page result-portrait {
     size: A4 portrait;
     margin: 4mm;
+  }
+
+  body:not(.home-page)::before,
+  .student-report-card::before,
+  .print-ca-sheet::before,
+  .password-print-page::before {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   body.print-result-page {

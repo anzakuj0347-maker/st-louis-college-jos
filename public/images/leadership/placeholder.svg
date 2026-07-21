@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="293" viewBox="0 0 220 293" role="img" aria-label="Photo placeholder">
+  <rect width="220" height="293" fill="#eef2f8"/>
+  <circle cx="110" cy="98" r="42" fill="#c5d0e0"/>
+  <ellipse cx="110" cy="248" rx="72" ry="58" fill="#c5d0e0"/>
+  <text x="110" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#5c6470">Photograph</text>
+</svg>

@@ -105,9 +105,14 @@ async function connectRemoteWithFallback(openConnection) {
   } catch (err) {
     const srvUri = process.env.REMOTE_MONGODB_URI;
     if (!srvUri?.startsWith('mongodb+srv://')) throw err;
-    if (!/querySrv|Server selection timed out|ENOTFOUND|ETIMEDOUT/i.test(err?.message || '')) throw err;
+
+    const message = err?.message || '';
+    const shouldFallback = /querySrv|Server selection timed out|ENOTFOUND|ETIMEDOUT|ECONNRESET|socket|closed|authentication failed|bad auth/i.test(message);
+    if (!shouldFallback) throw err;
 
     const fallbackUri = await resolveAtlasUri(srvUri);
+    if (fallbackUri === primaryUri) throw err;
+
     return { conn: await openConnection(fallbackUri), uri: fallbackUri };
   }
 }

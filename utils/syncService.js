@@ -37,6 +37,16 @@ const SYNC_STEP_LABELS = {
 };
 
 const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'events', 'news', 'results'];
+const SYNC_PREVIEW_TIMEOUT_MS = 20000;
+
+function withTimeout(promise, ms, message) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 function getLocalUri() {
   return process.env.LOCAL_MONGODB_URI || 'mongodb://127.0.0.1:27017/stlouis_college_jos';
@@ -654,92 +664,96 @@ async function getSyncPreview() {
   }
 
   try {
-    const data = await withConnections(async (localConn, remoteConn) => {
-    await ensureRemoteSessionIndexes(remoteConn);
+    const data = await withTimeout(
+      withConnections(async (localConn, remoteConn) => {
+        await ensureRemoteSessionIndexes(remoteConn);
 
-    const context = {
-      localSubjects: localConn.collection('subjects'),
-      remoteSubjects: remoteConn.collection('subjects'),
-      localUsers: localConn.collection('users'),
-      remoteUsers: remoteConn.collection('users')
-    };
+        const context = {
+          localSubjects: localConn.collection('subjects'),
+          remoteSubjects: remoteConn.collection('subjects'),
+          localUsers: localConn.collection('users'),
+          remoteUsers: remoteConn.collection('users')
+        };
 
-    const idMaps = {
-      subjects: await buildIdMap(context.localSubjects, context.remoteSubjects, 'code', 'code'),
-      users: await buildIdMap(context.localUsers, context.remoteUsers, 'studentId', 'studentId'),
-      staffs: new Map()
-    };
+        const idMaps = {
+          subjects: await buildIdMap(context.localSubjects, context.remoteSubjects, 'code', 'code'),
+          users: await buildIdMap(context.localUsers, context.remoteUsers, 'studentId', 'studentId'),
+          staffs: new Map()
+        };
 
-    context.validRemoteSubjectIds = await buildValidRemoteSubjectIds(context.remoteSubjects);
+        context.validRemoteSubjectIds = await buildValidRemoteSubjectIds(context.remoteSubjects);
 
-    const counts = {};
+        const counts = {};
 
-    for (const [name, config] of Object.entries(COLLECTIONS)) {
-      if (name === 'academicsessions') {
-        const localCol = localConn.collection(name);
-        const remoteCol = remoteConn.collection(name);
-        const localDocs = await localCol.find({}, { projection: { name: 1, term: 1 } }).toArray();
-        let created = 0;
-        let updated = 0;
+        for (const [name, config] of Object.entries(COLLECTIONS)) {
+          if (name === 'academicsessions') {
+            const localCol = localConn.collection(name);
+            const remoteCol = remoteConn.collection(name);
+            const localDocs = await localCol.find({}, { projection: { name: 1, term: 1 } }).toArray();
+            let created = 0;
+            let updated = 0;
 
-        for (const doc of localDocs) {
-          const remoteDoc = await remoteCol.findOne(getUniqueFilter(doc, config));
-          if (!remoteDoc) created += 1;
-          else updated += 1;
+            for (const doc of localDocs) {
+              const remoteDoc = await remoteCol.findOne(getUniqueFilter(doc, config));
+              if (!remoteDoc) created += 1;
+              else updated += 1;
+            }
+
+            counts[name] = {
+              created,
+              updated,
+              deleted: await countRemoteSessionDeletions(localCol, remoteCol)
+            };
+            continue;
+          }
+
+          if (name === 'events') {
+            const localCol = localConn.collection(name);
+            const remoteCol = remoteConn.collection(name);
+            const localDocs = await localCol.find().toArray();
+            counts[name] = {
+              created: 0,
+              updated: localDocs.length,
+              deleted: await countRemoteContentDeletions(localCol, remoteCol, eventRecordKey)
+            };
+            continue;
+          }
+
+          if (name === 'news') {
+            const localCol = localConn.collection(name);
+            const remoteCol = remoteConn.collection(name);
+            const localDocs = await localCol.find().toArray();
+            counts[name] = {
+              created: 0,
+              updated: localDocs.length,
+              deleted: await countRemoteContentDeletions(localCol, remoteCol, newsRecordKey)
+            };
+            continue;
+          }
+
+          counts[name] = await countPendingForCollection(
+            localConn.collection(name),
+            remoteConn.collection(name),
+            config,
+            idMaps,
+            context
+          );
         }
 
-        counts[name] = {
-          created,
-          updated,
-          deleted: await countRemoteSessionDeletions(localCol, remoteCol)
-        };
-        continue;
-      }
+        const totals = Object.values(counts).reduce(
+          (acc, item) => ({
+            created: acc.created + item.created,
+            updated: acc.updated + item.updated,
+            deleted: acc.deleted + (item.deleted || 0)
+          }),
+          { created: 0, updated: 0, deleted: 0 }
+        );
 
-      if (name === 'events') {
-        const localCol = localConn.collection(name);
-        const remoteCol = remoteConn.collection(name);
-        const localDocs = await localCol.find().toArray();
-        counts[name] = {
-          created: 0,
-          updated: localDocs.length,
-          deleted: await countRemoteContentDeletions(localCol, remoteCol, eventRecordKey)
-        };
-        continue;
-      }
-
-      if (name === 'news') {
-        const localCol = localConn.collection(name);
-        const remoteCol = remoteConn.collection(name);
-        const localDocs = await localCol.find().toArray();
-        counts[name] = {
-          created: 0,
-          updated: localDocs.length,
-          deleted: await countRemoteContentDeletions(localCol, remoteCol, newsRecordKey)
-        };
-        continue;
-      }
-
-      counts[name] = await countPendingForCollection(
-        localConn.collection(name),
-        remoteConn.collection(name),
-        config,
-        idMaps,
-        context
-      );
-    }
-
-    const totals = Object.values(counts).reduce(
-      (acc, item) => ({
-        created: acc.created + item.created,
-        updated: acc.updated + item.updated,
-        deleted: acc.deleted + (item.deleted || 0)
+        return { counts, totals };
       }),
-      { created: 0, updated: 0, deleted: 0 }
+      SYNC_PREVIEW_TIMEOUT_MS,
+      'Preview timed out while counting pending changes'
     );
-
-    return { counts, totals };
-    });
 
     return buildBasePreview({
       connected: true,
@@ -751,6 +765,26 @@ async function getSyncPreview() {
       totals: data.totals
     });
   } catch (err) {
+    const previewTimedOut = /timed out/i.test(err.message || '');
+
+    if (localConnected && remoteConnected) {
+      const localPreview = previewTimedOut ? await getLocalPreviewCounts() : null;
+      return buildBasePreview({
+        configured: true,
+        connected: true,
+        available: true,
+        canSubmit: true,
+        localConnected: true,
+        remoteConnected: true,
+        reason: previewTimedOut
+          ? 'Both databases are connected. Pending counts could not be finished in time, but you can synchronise now.'
+          : `Could not read pending changes: ${err.message || err}`,
+        counts: localPreview?.counts || emptyCounts(),
+        totals: localPreview?.totals || { created: 0, updated: 0 },
+        showLocalTotals: Boolean(localPreview)
+      });
+    }
+
     return buildBasePreview({
       configured: true,
       localConnected,
