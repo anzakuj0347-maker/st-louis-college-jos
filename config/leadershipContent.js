@@ -1,8 +1,8 @@
 module.exports = `<div class="leadership-grid">
   <article class="leadership-card">
-    <img src="/images/leadership/principal.jpg" alt="Sr. Rhoda Enna, SSL — Principal" class="leadership-photo" width="220" height="293" onerror="this.onerror=null;this.src='/images/leadership/placeholder.svg';">
+    <img src="/images/leadership/principal.jpg" alt="Sr. Rhoda Enna, OLF — Principal" class="leadership-photo" width="220" height="293" onerror="this.onerror=null;this.src='/images/leadership/placeholder.svg';">
     <h3>Principal</h3>
-    <p class="leadership-name">Sr. Rhoda Enna, SSL</p>
+    <p class="leadership-name">Sr. Rhoda Enna, OLF</p>
   </article>
   <article class="leadership-card">
     <img src="/images/leadership/vp-administration.jpg" alt="Mrs. Peace Egborode — Vice Principal (Administration)" class="leadership-photo" width="220" height="293" onerror="this.onerror=null;this.src='/images/leadership/placeholder.svg';">
