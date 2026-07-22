@@ -6,6 +6,7 @@ const MongoStore = require('connect-mongo');
 const connectDB = require('./config/db');
 const { getAppMongoUri, isHostedEnvironment } = require('./config/mongoUri');
 const navigation = require('./config/navigation');
+const site = require('./config/site');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,7 +51,9 @@ app.use((req, res, next) => {
     return item.children.some((child) => res.locals.isNavPathActive(child.path));
   };
   res.locals.user = req.session.user || null;
-  res.locals.schoolName = 'St. Louis College Jos';
+  res.locals.schoolName = site.name;
+  res.locals.schoolEmail = site.email;
+  res.locals.schoolAddress = site.address;
   next();
 });
 

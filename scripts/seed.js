@@ -114,7 +114,7 @@ Our pride eternally.
 <li>Pay the application fee at the bursary</li>
 <li>Submit your file and await entrance examination date</li>
 </ol>
-<p>Contact the Admissions Office: <a href="mailto:info@stlouisvillejos.sch.ng">info@stlouisvillejos.sch.ng</a></p>`
+<p>Contact the Admissions Office: <a href="mailto:info@louisvillejos.sch.ng">info@louisvillejos.sch.ng</a></p>`
   },
   {
     slug: 'entrance-exam-details',
