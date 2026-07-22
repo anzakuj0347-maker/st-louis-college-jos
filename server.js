@@ -40,6 +40,15 @@ app.use(session({
 app.use((req, res, next) => {
   res.locals.navigation = navigation;
   res.locals.currentPath = req.path;
+  res.locals.isNavPathActive = (path) => {
+    if (req.path === path) return true;
+    if (path === '/results/login' && req.path.startsWith('/results')) return true;
+    return false;
+  };
+  res.locals.isNavDropdownActive = (item) => {
+    if (!item.children || !item.children.length) return false;
+    return item.children.some((child) => res.locals.isNavPathActive(child.path));
+  };
   res.locals.user = req.session.user || null;
   res.locals.schoolName = 'St. Louis College Jos';
   next();

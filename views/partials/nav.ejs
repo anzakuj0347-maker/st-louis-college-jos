@@ -4,16 +4,16 @@
       <% navigation.forEach(function(item) { %>
         <% if (item.type === 'link') { %>
           <li class="nav-item">
-            <a href="<%= item.path %>" class="nav-link<%= currentPath === item.path ? ' active' : '' %>"><%= item.label %></a>
+            <a href="<%= item.path %>" class="nav-link<%= isNavPathActive(item.path) ? ' active' : '' %>"<%= isNavPathActive(item.path) ? ' aria-current="page"' : '' %>><%= item.label %></a>
           </li>
         <% } else if (item.type === 'dropdown') { %>
-          <li class="nav-item nav-item--dropdown">
-            <a href="#" class="nav-link nav-dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+          <li class="nav-item nav-item--dropdown<%= isNavDropdownActive(item) ? ' is-active-section' : '' %>">
+            <a href="#" class="nav-link nav-dropdown-toggle<%= isNavDropdownActive(item) ? ' active' : '' %>" aria-haspopup="true" aria-expanded="false">
               <%= item.label %> <span class="caret">▾</span>
             </a>
             <ul class="nav-dropdown">
               <% item.children.forEach(function(child) { %>
-                <li><a href="<%= child.path %>" class="nav-dropdown-link<%= currentPath === child.path ? ' active' : '' %>"><%= child.label %></a></li>
+                <li><a href="<%= child.path %>" class="nav-dropdown-link<%= isNavPathActive(child.path) ? ' active' : '' %>"<%= isNavPathActive(child.path) ? ' aria-current="page"' : '' %>><%= child.label %></a></li>
               <% }); %>
             </ul>
           </li>
