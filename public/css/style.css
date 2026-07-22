@@ -50,9 +50,18 @@ body:not(.home-page)::before {
   z-index: 0;
 }
 
-body:not(.home-page) > * {
+body:not(.home-page) > *:not(.site-header):not(.cookie-banner) {
   position: relative;
   z-index: 1;
+}
+
+body:not(.home-page) > .site-header {
+  position: relative;
+  z-index: 1000;
+}
+
+body:not(.home-page) > .cookie-banner {
+  z-index: 2000;
 }
 
 body:has(.student-report-card)::before,
@@ -88,6 +97,7 @@ a:hover { color: var(--msm-red-dark); }
   z-index: 1000;
   background: var(--white);
   box-shadow: 0 1px 0 var(--border);
+  overflow: visible;
 }
 
 .header-top {
@@ -171,6 +181,9 @@ a:hover { color: var(--msm-red-dark); }
 /* Navigation bar */
 .main-nav {
   background: var(--royal-blue);
+  position: relative;
+  z-index: 1;
+  overflow: visible;
 }
 
 .main-nav--transparent {
