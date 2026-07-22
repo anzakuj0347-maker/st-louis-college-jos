@@ -1,0 +1,49 @@
+<%- include('../partials/doc-start', { title: 'Apply Now - Access' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Admission</p>
+    <h1>Application Access</h1>
+    <p>Enter the 6-digit PIN provided by the school to open the admission form.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container auth-container">
+    <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+    <form class="auth-form apply-access-form" method="POST" action="/admission/apply-now/access">
+      <div class="form-group">
+        <label for="pin">Admission PIN *</label>
+        <input
+          type="text"
+          id="pin"
+          name="pin"
+          required
+          inputmode="numeric"
+          pattern="\d{6}"
+          maxlength="6"
+          minlength="6"
+          autocomplete="one-time-code"
+          placeholder="Enter 6-digit PIN"
+          value="<%= pin || '' %>"
+        >
+      </div>
+      <button type="submit" class="btn btn--gold">Continue to Application Form</button>
+    </form>
+
+    <p class="auth-hint">
+      Each PIN can only be used once. Contact the admissions office if you need a PIN or have misplaced yours.
+    </p>
+    <p class="auth-hint">
+      <a href="/admission/applications/review">Already applied? View and print your application</a>
+    </p>
+    <p class="auth-hint">
+      Email: <a href="mailto:<%= schoolEmail %>"><%= schoolEmail %></a>
+    </p>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

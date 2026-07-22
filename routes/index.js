@@ -4,6 +4,24 @@ const Page = require('../models/Page');
 const Event = require('../models/Event');
 const News = require('../models/News');
 const HeroSlide = require('../models/HeroSlide');
+const AdmissionList = require('../models/AdmissionList');
+const AdmissionApplication = require('../models/AdmissionApplication');
+const AdmissionPin = require('../models/AdmissionPin');
+const { CLASS_LEVELS } = require('../config/schoolLevels');
+const {
+  normalizeApplicationInput,
+  validateApplicationInput,
+  canAccessApplicationReview,
+  formatApplicationDate,
+  formatApplicationDateTime,
+  getApplicantFullName,
+  normalizePhone
+} = require('../utils/admissionApplicationHelpers');
+const {
+  normalizeAdmissionPin,
+  isValidAdmissionPinFormat
+} = require('../utils/admissionPinHelpers');
+const { loadSessionAdmissionPin, requireAdmissionPin } = require('../middleware/admissionPinAuth');
 const { resolveHeroSlides } = require('../utils/heroImageHelpers');
 
 router.get('/', async (req, res, next) => {
@@ -42,6 +60,222 @@ router.post('/contact', (req, res) => {
     title: 'Contact Us',
     success: 'Thank you for contacting St. Louis College Jos. We will respond shortly.'
   });
+});
+
+router.get('/admission/admission-list', async (req, res, next) => {
+  try {
+    const admissionList = await AdmissionList.findOne({ key: 'admission-list' }).select('-data');
+    res.render('pages/admission-list', {
+      title: 'Admission List',
+      admissionList
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/admission/admission-list/pdf', async (req, res, next) => {
+  try {
+    const admissionList = await AdmissionList.findOne({ key: 'admission-list' }).select('+data');
+    if (!admissionList || !admissionList.data?.length) {
+      return res.status(404).render('pages/404', { title: 'Document Not Found' });
+    }
+
+    const fileName = admissionList.originalName || 'admission-list.pdf';
+    res.setHeader('Content-Type', admissionList.mimeType || 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.setHeader('Content-Length', admissionList.data.length);
+    res.send(admissionList.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+function renderApplyNowPage(res, data = {}) {
+  res.render('pages/apply-now', {
+    title: 'Apply Now',
+    classLevels: CLASS_LEVELS,
+    error: null,
+    success: null,
+    submittedApplication: null,
+    admissionPin: null,
+    form: {},
+    ...data
+  });
+}
+
+function renderApplyNowAccessPage(res, data = {}) {
+  res.render('pages/apply-now-access', {
+    title: 'Application Access',
+    error: null,
+    pin: '',
+    ...data
+  });
+}
+
+router.get('/admission/apply-now/access', (req, res) => {
+  renderApplyNowAccessPage(res);
+});
+
+router.post('/admission/apply-now/access', async (req, res, next) => {
+  try {
+    const pin = normalizeAdmissionPin(req.body.pin);
+
+    if (!isValidAdmissionPinFormat(pin)) {
+      return renderApplyNowAccessPage(res, {
+        error: 'Enter a valid 6-digit admission PIN.',
+        pin
+      });
+    }
+
+    const pinDoc = await AdmissionPin.findOne({ pin });
+    if (!pinDoc || pinDoc.status !== 'active') {
+      return renderApplyNowAccessPage(res, {
+        error: 'This PIN is invalid, has already been used, or has been revoked.',
+        pin
+      });
+    }
+
+    req.session.admissionPinId = pinDoc._id.toString();
+    res.redirect('/admission/apply-now');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/admission/apply-now/logout', (req, res) => {
+  delete req.session.admissionPinId;
+  res.redirect('/admission/apply-now/access');
+});
+
+router.get('/admission/apply-now', requireAdmissionPin, (req, res) => {
+  renderApplyNowPage(res, { admissionPin: req.admissionPin });
+});
+
+router.post('/admission/apply-now', requireAdmissionPin, async (req, res, next) => {
+  try {
+    const form = normalizeApplicationInput(req.body);
+    const errors = validateApplicationInput(form);
+
+    if (errors.length) {
+      return renderApplyNowPage(res, {
+        error: errors.join(' '),
+        form,
+        admissionPin: req.admissionPin
+      });
+    }
+
+    const pinDoc = await AdmissionPin.findOne({
+      _id: req.admissionPin._id,
+      status: 'active'
+    });
+
+    if (!pinDoc) {
+      delete req.session.admissionPinId;
+      return res.redirect('/admission/apply-now/access');
+    }
+
+    const application = await AdmissionApplication.create({
+      ...form,
+      dateOfBirth: new Date(form.dateOfBirth),
+      admissionPin: pinDoc._id
+    });
+
+    pinDoc.status = 'used';
+    pinDoc.usedAt = new Date();
+    pinDoc.application = application._id;
+    await pinDoc.save();
+
+    delete req.session.admissionPinId;
+
+    req.session.submittedApplicationId = application._id.toString();
+    res.redirect(`/admission/applications/${application.applicationId}/review?submitted=1`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+function renderApplicationReviewPage(res, data = {}) {
+  res.render('pages/application-review', {
+    title: 'Application Review',
+    authorized: false,
+    application: null,
+    error: null,
+    lookup: {},
+    formatApplicationDate,
+    formatApplicationDateTime,
+    getApplicantFullName,
+    ...data
+  });
+}
+
+router.get('/admission/applications/review', (req, res) => {
+  renderApplicationReviewPage(res);
+});
+
+router.post('/admission/applications/review', async (req, res, next) => {
+  try {
+    const applicationId = req.body.applicationId?.trim();
+    const parentPhone = req.body.parentPhone?.trim();
+    const lookup = { applicationId: applicationId || '', parentPhone: parentPhone || '' };
+
+    if (!applicationId || !parentPhone) {
+      return renderApplicationReviewPage(res, {
+        error: 'Enter your application reference and parent or guardian phone number.',
+        lookup
+      });
+    }
+
+    const application = await AdmissionApplication.findOne({ applicationId });
+    if (!application) {
+      return renderApplicationReviewPage(res, {
+        error: 'Application not found or phone number does not match our records.',
+        lookup
+      });
+    }
+
+    if (normalizePhone(application.parentPhone) !== normalizePhone(parentPhone)) {
+      return renderApplicationReviewPage(res, {
+        error: 'Application not found or phone number does not match our records.',
+        lookup
+      });
+    }
+
+    req.session.submittedApplicationId = application._id.toString();
+    res.redirect(`/admission/applications/${application.applicationId}/review`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/admission/applications/:applicationId/review', async (req, res, next) => {
+  try {
+    const application = await AdmissionApplication.findOne({ applicationId: req.params.applicationId })
+      .populate('admissionPin', 'pin');
+
+    if (!application) {
+      return renderApplicationReviewPage(res, {
+        error: 'Application not found.',
+        lookup: { applicationId: req.params.applicationId }
+      });
+    }
+
+    if (!canAccessApplicationReview(req, application)) {
+      return renderApplicationReviewPage(res, {
+        lookup: { applicationId: req.params.applicationId }
+      });
+    }
+
+    renderApplicationReviewPage(res, {
+      authorized: true,
+      application,
+      success: req.query.submitted === '1'
+        ? 'Application submitted successfully. Review your details below and print a copy for your records.'
+        : null
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 const sectionRoutes = ['about', 'academics', 'admission', 'student-life', 'downloads'];

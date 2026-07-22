@@ -1,0 +1,75 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+    <p>Upload the admission list PDF shown under Admission → Admission List on the website.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Current Admission List</h2>
+        <% if (admissionList) { %>
+          <dl class="document-details">
+            <div class="document-details-row">
+              <dt>File name</dt>
+              <dd><%= admissionList.originalName || 'admission-list.pdf' %></dd>
+            </div>
+            <div class="document-details-row">
+              <dt>File size</dt>
+              <dd><%= formatFileSize(admissionList.fileSize) %></dd>
+            </div>
+            <div class="document-details-row">
+              <dt>Last updated</dt>
+              <dd><%= new Date(admissionList.updatedAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) %></dd>
+            </div>
+          </dl>
+          <div class="admin-form-actions">
+            <a href="/admission/admission-list" class="btn btn--outline" target="_blank" rel="noopener">View Public Page</a>
+            <a href="/admission/admission-list/pdf" class="btn btn--outline" target="_blank" rel="noopener">Open PDF</a>
+          </div>
+        <% } else { %>
+          <p class="text-muted">No admission list PDF has been uploaded yet.</p>
+        <% } %>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title"><%= admissionList ? 'Replace PDF' : 'Upload PDF' %></h2>
+        <form class="admin-form" method="POST" action="/slc-admin/admission-list" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="pdf">Admission List PDF *</label>
+            <input type="file" id="pdf" name="pdf" accept="application/pdf,.pdf" required>
+            <p class="form-hint">PDF only. Maximum file size: 10 MB. Uploading replaces the current list.</p>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold">Upload PDF</button>
+          </div>
+        </form>
+      </div>
+
+      <% if (admissionList) { %>
+        <div class="admin-panel">
+          <h2 class="admin-panel-title">Remove Admission List</h2>
+          <p class="text-muted">This hides the PDF from the public Admission List page.</p>
+          <form class="admin-form" method="POST" action="/slc-admin/admission-list/remove" onsubmit="return confirm('Remove the admission list from the website?');">
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn--outline">Remove PDF</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

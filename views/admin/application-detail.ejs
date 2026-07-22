@@ -1,0 +1,95 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+    <p>Application reference: <strong><%= application.applicationId %></strong></p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <div class="admin-form-actions">
+          <a href="/slc-admin/applications" class="btn btn--outline">Back to Applications</a>
+        </div>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Applicant Details</h2>
+        <dl class="document-details">
+          <div class="document-details-row"><dt>Full Name</dt><dd><%= application.firstName %><% if (application.middleName) { %> <%= application.middleName %><% } %> <%= application.lastName %></dd></div>
+          <div class="document-details-row"><dt>Date of Birth</dt><dd><%= new Date(application.dateOfBirth).toLocaleDateString('en-NG', { dateStyle: 'long' }) %></dd></div>
+          <div class="document-details-row"><dt>Gender</dt><dd><%= application.gender %></dd></div>
+          <div class="document-details-row"><dt>Nationality</dt><dd><%= application.nationality || '—' %></dd></div>
+          <div class="document-details-row"><dt>State of Origin</dt><dd><%= application.stateOfOrigin || '—' %></dd></div>
+          <div class="document-details-row"><dt>Local Government</dt><dd><%= application.localGovernment || '—' %></dd></div>
+          <div class="document-details-row"><dt>Religion</dt><dd><%= application.religion || '—' %></dd></div>
+          <div class="document-details-row"><dt>Class Applying For</dt><dd><%= application.classApplyingFor %></dd></div>
+          <div class="document-details-row"><dt>Admission PIN</dt><dd><%= application.admissionPin ? application.admissionPin.pin : '—' %></dd></div>
+          <div class="document-details-row"><dt>Previous School</dt><dd><%= application.previousSchool || '—' %></dd></div>
+          <div class="document-details-row"><dt>Last Class Completed</dt><dd><%= application.lastClassCompleted || '—' %></dd></div>
+        </dl>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Parent / Guardian</h2>
+        <dl class="document-details">
+          <div class="document-details-row"><dt>Name</dt><dd><%= application.parentName %></dd></div>
+          <div class="document-details-row"><dt>Phone</dt><dd><%= application.parentPhone %></dd></div>
+          <div class="document-details-row"><dt>Email</dt><dd><%= application.parentEmail || '—' %></dd></div>
+          <div class="document-details-row"><dt>Address</dt><dd><%= application.parentAddress %></dd></div>
+          <div class="document-details-row"><dt>Emergency Contact</dt><dd><%= application.emergencyContactName || '—' %><% if (application.emergencyContactPhone) { %> · <%= application.emergencyContactPhone %><% } %></dd></div>
+        </dl>
+      </div>
+
+      <% if (application.applicantNotes) { %>
+        <div class="admin-panel">
+          <h2 class="admin-panel-title">Applicant Notes</h2>
+          <p><%= application.applicantNotes %></p>
+        </div>
+      <% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Administration</h2>
+        <p class="document-meta">Submitted: <%= new Date(application.createdAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) %></p>
+        <form class="admin-form" method="POST" action="/slc-admin/applications/<%= application._id %>">
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label for="status">Application Status</label>
+              <select id="status" name="status">
+                <% statusOptions.forEach(function(statusOption) { %>
+                  <option value="<%= statusOption %>"<%= application.status === statusOption ? ' selected' : '' %>><%= formatApplicationStatus(statusOption) %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group admin-form-full">
+              <label for="adminNotes">Admin Notes</label>
+              <textarea id="adminNotes" name="adminNotes" rows="4"><%= application.adminNotes || '' %></textarea>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Delete Application</h2>
+        <form method="POST" action="/slc-admin/applications/<%= application._id %>/delete" onsubmit="return confirm('Delete this application permanently?');">
+          <button type="submit" class="btn btn--outline">Delete Application</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

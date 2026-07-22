@@ -1,0 +1,79 @@
+<%- include('../partials/doc-start', { title: 'Application Review', bodyClass: 'application-review-page' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact no-print">
+  <div class="container">
+    <p class="eyebrow">Admission</p>
+    <h1><%= authorized ? 'Application Review' : 'View Application' %></h1>
+    <% if (authorized && application) { %>
+      <p>Reference: <strong><%= application.applicationId %></strong></p>
+    <% } else { %>
+      <p>Enter your application reference and parent or guardian phone number to review and print your form.</p>
+    <% } %>
+  </div>
+</section>
+
+<section class="page-content application-review-page">
+  <div class="container">
+    <% if (!authorized) { %>
+      <div class="apply-form-wrap application-lookup-wrap no-print">
+        <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+        <form class="auth-form" method="POST" action="/admission/applications/review">
+          <div class="form-group">
+            <label for="applicationId">Application Reference *</label>
+            <input
+              type="text"
+              id="applicationId"
+              name="applicationId"
+              required
+              placeholder="e.g. APP-2026-0001"
+              value="<%= lookup.applicationId || '' %>"
+            >
+          </div>
+          <div class="form-group">
+            <label for="parentPhone">Parent / Guardian Phone *</label>
+            <input
+              type="tel"
+              id="parentPhone"
+              name="parentPhone"
+              required
+              placeholder="Phone number used on the application"
+              value="<%= lookup.parentPhone || '' %>"
+            >
+          </div>
+          <button type="submit" class="btn btn--gold">View Application</button>
+        </form>
+        <p class="auth-hint"><a href="/admission/apply-now/access">Apply for admission</a></p>
+      </div>
+    <% } else { %>
+      <% if (success) { %><div class="alert alert--success no-print"><%= success %></div><% } %>
+      <div class="print-toolbar no-print">
+        <p>Review your submitted application for <strong><%= getApplicantFullName(application) %></strong>.</p>
+        <div class="print-toolbar-actions">
+          <button type="button" class="btn btn--gold" id="printApplicationBtn">Print Application</button>
+        </div>
+      </div>
+
+      <div class="application-review-stage print-only application-print-stage">
+        <%- include('partials/application-review-sheet', {
+          application,
+          draft: false,
+          formatApplicationDate,
+          formatApplicationDateTime,
+          getApplicantFullName
+        }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<% if (authorized) { %>
+  <script>
+    document.getElementById('printApplicationBtn')?.addEventListener('click', function () {
+      window.print();
+    });
+  </script>
+<% } %>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

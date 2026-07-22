@@ -1,0 +1,73 @@
+<article class="application-review-sheet<%= typeof draft !== 'undefined' && draft ? ' application-review-sheet--draft' : '' %>">
+  <header class="application-review-header">
+    <img src="/images/logo.jpg" alt="<%= schoolName %> Logo" class="application-review-logo">
+    <div class="application-review-school">
+      <h1><%= schoolName %></h1>
+      <p><%= schoolAddress %></p>
+      <p><%= schoolEmail %></p>
+    </div>
+  </header>
+
+  <div class="application-review-title">
+    <h2>Admission Application Form</h2>
+    <% if (application.applicationId) { %>
+      <p class="application-review-ref">Reference: <strong><%= application.applicationId %></strong></p>
+    <% } else if (typeof draft !== 'undefined' && draft) { %>
+      <p class="application-review-ref application-review-ref--draft">Draft preview — not yet submitted</p>
+    <% } %>
+    <% if (application.createdAt) { %>
+      <p class="application-review-meta">Submitted: <%= formatApplicationDateTime(application.createdAt) %></p>
+    <% } %>
+  </div>
+
+  <section class="application-review-section">
+    <h3>Applicant Information</h3>
+    <dl class="application-review-grid">
+      <div><dt>Full Name</dt><dd><%= getApplicantFullName(application) %></dd></div>
+      <div><dt>Date of Birth</dt><dd><%= formatApplicationDate(application.dateOfBirth) %></dd></div>
+      <div><dt>Gender</dt><dd><%= application.gender || '—' %></dd></div>
+      <div><dt>Nationality</dt><dd><%= application.nationality || '—' %></dd></div>
+      <div><dt>State of Origin</dt><dd><%= application.stateOfOrigin || '—' %></dd></div>
+      <div><dt>Local Government</dt><dd><%= application.localGovernment || '—' %></dd></div>
+      <div><dt>Religion</dt><dd><%= application.religion || '—' %></dd></div>
+      <div><dt>Class Applying For</dt><dd><%= application.classApplyingFor || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <section class="application-review-section">
+    <h3>Previous School</h3>
+    <dl class="application-review-grid">
+      <div><dt>Previous School</dt><dd><%= application.previousSchool || '—' %></dd></div>
+      <div><dt>Last Class Completed</dt><dd><%= application.lastClassCompleted || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <section class="application-review-section">
+    <h3>Parent / Guardian</h3>
+    <dl class="application-review-grid">
+      <div><dt>Name</dt><dd><%= application.parentName || '—' %></dd></div>
+      <div><dt>Phone</dt><dd><%= application.parentPhone || '—' %></dd></div>
+      <div><dt>Email</dt><dd><%= application.parentEmail || '—' %></dd></div>
+      <div class="application-review-full"><dt>Address</dt><dd><%= application.parentAddress || '—' %></dd></div>
+      <div><dt>Emergency Contact</dt><dd><%= application.emergencyContactName || '—' %><% if (application.emergencyContactPhone) { %> · <%= application.emergencyContactPhone %><% } %></dd></div>
+    </dl>
+  </section>
+
+  <% if (application.applicantNotes) { %>
+    <section class="application-review-section">
+      <h3>Additional Notes</h3>
+      <p class="application-review-notes"><%= application.applicantNotes %></p>
+    </section>
+  <% } %>
+
+  <footer class="application-review-footer">
+    <div class="application-review-signature">
+      <span class="application-review-sign-line"></span>
+      <p>Applicant / Parent Signature</p>
+    </div>
+    <div class="application-review-signature">
+      <span class="application-review-sign-line"></span>
+      <p>Admissions Office</p>
+    </div>
+  </footer>
+</article>

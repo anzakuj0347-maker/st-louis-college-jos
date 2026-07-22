@@ -10,12 +10,23 @@ const User = require('../models/User');
 const Staff = require('../models/Staff');
 const Result = require('../models/Result');
 const AcademicSession = require('../models/AcademicSession');
+const AdmissionList = require('../models/AdmissionList');
+const AdmissionApplication = require('../models/AdmissionApplication');
+const AdmissionPin = require('../models/AdmissionPin');
 const { generateStudentPassword, getClassTier, getSubjectFilterForTier, createStudentRecord } = require('../utils/studentHelpers');
 const { parseStudentRows, buildImportTemplateBuffer } = require('../utils/studentImportHelpers');
 const { generateLoginPassword } = require('../utils/passwordHelpers');
 const { CLASS_LEVELS, ARMS, TERMS } = require('../config/schoolLevels');
 const { buildCredentials, filterCredentials } = require('../utils/credentialHelpers');
 const { getFeeAccess, normalizeFeeStatus } = require('../utils/feeHelpers');
+const {
+  APPLICATION_STATUSES,
+  formatApplicationStatus
+} = require('../utils/admissionApplicationHelpers');
+const {
+  generateAdmissionPins,
+  formatPinStatus
+} = require('../utils/admissionPinHelpers');
 
 async function normalizeStaffAssignments(staff) {
   if (staff.classAssignments?.length) return staff.classAssignments;
@@ -53,6 +64,39 @@ const studentImportUpload = multer({
     cb(new Error('Upload an Excel file (.xlsx or .xls).'));
   }
 });
+
+const admissionListUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    const name = file.originalname.toLowerCase();
+    if (file.mimetype === 'application/pdf' || name.endsWith('.pdf')) {
+      return cb(null, true);
+    }
+    cb(new Error('Upload a PDF file.'));
+  }
+});
+
+function formatFileSize(bytes) {
+  const size = Number(bytes) || 0;
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function renderAdmissionListPage(res, data = {}) {
+  const admissionList = await AdmissionList.findOne({ key: 'admission-list' }).select('-data');
+  renderAdmin(res, 'admin/admission-list', {
+    title: 'Admission List',
+    pageTitle: 'Admission List',
+    activeSection: 'admission-list',
+    admissionList,
+    formatFileSize,
+    error: null,
+    success: null,
+    ...data
+  });
+}
 
 async function renderStudentsPage(res, data = {}) {
   const students = data.students || await User.find().select('-password').populate('offeredSubjects', 'code name').sort('studentId');
@@ -1176,6 +1220,229 @@ router.post('/fees', requireAdmin, async (req, res, next) => {
       : `Fee status saved for ${classLevel} Arm ${arm}.`;
 
     res.redirect(`/slc-admin/fees?classLevel=${encodeURIComponent(classLevel)}&arm=${encodeURIComponent(arm)}&success=${encodeURIComponent(success)}`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ----- Admission List ----- */
+router.get('/admission-list', requireAdmin, async (req, res, next) => {
+  try {
+    await renderAdmissionListPage(res, {
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/admission-list', requireAdmin, (req, res, next) => {
+  admissionListUpload.single('pdf')(req, res, async (uploadErr) => {
+    if (uploadErr) {
+      return renderAdmissionListPage(res, { error: uploadErr.message });
+    }
+
+    try {
+      if (!req.file) {
+        return renderAdmissionListPage(res, { error: 'Choose a PDF file to upload.' });
+      }
+
+      await AdmissionList.findOneAndUpdate(
+        { key: 'admission-list' },
+        {
+          key: 'admission-list',
+          title: 'Admission List',
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype || 'application/pdf',
+          data: req.file.buffer,
+          fileSize: req.file.size
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+
+      res.redirect('/slc-admin/admission-list?success=' + encodeURIComponent('Admission list PDF uploaded successfully.'));
+    } catch (err) {
+      next(err);
+    }
+  });
+});
+
+router.post('/admission-list/remove', requireAdmin, async (req, res, next) => {
+  try {
+    await AdmissionList.deleteOne({ key: 'admission-list' });
+    res.redirect('/slc-admin/admission-list?success=' + encodeURIComponent('Admission list removed from the website.'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ----- Admission PINs ----- */
+async function renderAdmissionPinsPage(res, data = {}) {
+  const statusFilter = data.statusFilter || '';
+  const query = statusFilter ? { status: statusFilter } : {};
+  const pins = await AdmissionPin.find(query)
+    .populate('application', 'applicationId firstName lastName')
+    .sort('-createdAt');
+
+  renderAdmin(res, 'admin/admission-pins', {
+    title: 'Admission PINs',
+    pageTitle: 'Admission PINs',
+    activeSection: 'admission-pins',
+    pins,
+    generatedPins: data.generatedPins || [],
+    statusFilter,
+    statusOptions: ['active', 'used', 'revoked'],
+    formatPinStatus,
+    searchPlaceholder: 'Search by PIN, label, status or application reference...',
+    error: null,
+    success: null,
+    ...data
+  });
+}
+
+router.get('/admission-pins', requireAdmin, async (req, res, next) => {
+  try {
+    await renderAdmissionPinsPage(res, {
+      statusFilter: req.query.status?.trim() || '',
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/admission-pins', requireAdmin, async (req, res, next) => {
+  try {
+    const count = Number(req.body.count);
+    if (!Number.isFinite(count) || count < 1 || count > 50) {
+      return renderAdmissionPinsPage(res, { error: 'Enter a number of PINs between 1 and 50.' });
+    }
+
+    const generatedPins = await generateAdmissionPins(count, {
+      label: req.body.label,
+      createdBy: req.session.admin?.username || req.session.admin?.name || ''
+    });
+
+    await renderAdmissionPinsPage(res, {
+      generatedPins,
+      success: `Generated ${generatedPins.length} admission PIN${generatedPins.length === 1 ? '' : 's'}.`
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/admission-pins/:id/revoke', requireAdmin, async (req, res, next) => {
+  try {
+    const pinDoc = await AdmissionPin.findById(req.params.id);
+    if (!pinDoc) {
+      return res.redirect('/slc-admin/admission-pins?error=' + encodeURIComponent('PIN not found.'));
+    }
+
+    if (pinDoc.status !== 'active') {
+      return res.redirect('/slc-admin/admission-pins?error=' + encodeURIComponent('Only active PINs can be revoked.'));
+    }
+
+    pinDoc.status = 'revoked';
+    await pinDoc.save();
+
+    res.redirect('/slc-admin/admission-pins?success=' + encodeURIComponent('PIN revoked successfully.'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ----- Admission Applications ----- */
+async function renderApplicationsPage(res, data = {}) {
+  const statusFilter = data.statusFilter || '';
+  const query = statusFilter ? { status: statusFilter } : {};
+  const applications = await AdmissionApplication.find(query).sort('-createdAt');
+
+  renderAdmin(res, 'admin/applications', {
+    title: 'Admission Applications',
+    pageTitle: 'Admission Applications',
+    activeSection: 'applications',
+    applications,
+    statusFilter,
+    statusOptions: APPLICATION_STATUSES,
+    formatApplicationStatus,
+    searchPlaceholder: 'Search by reference, name, class, phone, email or status...',
+    error: null,
+    success: null,
+    ...data
+  });
+}
+
+router.get('/applications', requireAdmin, async (req, res, next) => {
+  try {
+    await renderApplicationsPage(res, {
+      statusFilter: req.query.status?.trim() || '',
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/applications/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const application = await AdmissionApplication.findById(req.params.id).populate('admissionPin', 'pin status');
+    if (!application) {
+      return res.redirect('/slc-admin/applications?error=' + encodeURIComponent('Application not found.'));
+    }
+
+    renderAdmin(res, 'admin/application-detail', {
+      title: 'Application ' + application.applicationId,
+      pageTitle: 'Application Details',
+      activeSection: 'applications',
+      application,
+      statusOptions: APPLICATION_STATUSES,
+      formatApplicationStatus,
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/applications/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const application = await AdmissionApplication.findById(req.params.id);
+    if (!application) {
+      return res.redirect('/slc-admin/applications?error=' + encodeURIComponent('Application not found.'));
+    }
+
+    const status = req.body.status?.trim();
+    if (!APPLICATION_STATUSES.includes(status)) {
+      return renderAdmin(res, 'admin/application-detail', {
+        title: 'Application ' + application.applicationId,
+        pageTitle: 'Application Details',
+        activeSection: 'applications',
+        application,
+        statusOptions: APPLICATION_STATUSES,
+        formatApplicationStatus,
+        error: 'Choose a valid application status.'
+      });
+    }
+
+    application.status = status;
+    application.adminNotes = req.body.adminNotes?.trim() || '';
+    await application.save();
+
+    res.redirect('/slc-admin/applications/' + application._id + '?success=' + encodeURIComponent('Application updated successfully.'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/applications/:id/delete', requireAdmin, async (req, res, next) => {
+  try {
+    await AdmissionApplication.findByIdAndDelete(req.params.id);
+    res.redirect('/slc-admin/applications?success=' + encodeURIComponent('Application deleted.'));
   } catch (err) {
     next(err);
   }

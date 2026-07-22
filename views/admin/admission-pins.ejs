@@ -1,0 +1,119 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+    <p>Generate one-time PINs for applicants to access the online admission form.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <% if (generatedPins && generatedPins.length) { %>
+        <div class="admin-panel">
+          <h2 class="admin-panel-title">Newly Generated PINs</h2>
+          <p class="admin-form-note">Copy and share each PIN with one applicant. Each PIN works only once.</p>
+          <div class="pin-generated-list">
+            <% generatedPins.forEach(function(item) { %>
+              <code class="pin-generated-item"><%= item.pin %></code>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="admin-panel">
+        <h2 class="admin-panel-title">Generate PINs</h2>
+        <form class="admin-form" method="POST" action="/slc-admin/admission-pins">
+          <div class="admin-form-grid">
+            <div class="form-group">
+              <label for="count">Number of PINs *</label>
+              <input type="number" id="count" name="count" min="1" max="50" value="1" required>
+            </div>
+            <div class="form-group">
+              <label for="label">Label (optional)</label>
+              <input type="text" id="label" name="label" placeholder="e.g. 2026 intake batch A">
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn--gold">Generate PINs</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">PIN Registry (<%= pins.length %>)</h2>
+          <form class="admin-inline-filter" method="GET" action="/slc-admin/admission-pins">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter" name="status" onchange="this.form.submit()">
+              <option value="">All statuses</option>
+              <% statusOptions.forEach(function(statusOption) { %>
+                <option value="<%= statusOption %>"<%= statusFilter === statusOption ? ' selected' : '' %>><%= formatPinStatus(statusOption) %></option>
+              <% }); %>
+            </select>
+          </form>
+        </div>
+
+        <% if (pins.length) { %>
+          <%- include('../partials/admin-search', { searchPlaceholder: searchPlaceholder }) %>
+
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table" data-admin-search-table>
+              <thead>
+                <tr>
+                  <th>PIN</th>
+                  <th>Status</th>
+                  <th>Label</th>
+                  <th>Created</th>
+                  <th>Used</th>
+                  <th>Application</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% pins.forEach(function(item) { %>
+                  <tr data-search-row="<%= item.pin %> <%= item.status %> <%= item.label || '' %> <%= item.application ? item.application.applicationId || '' : '' %>">
+                    <td><code><%= item.pin %></code></td>
+                    <td><span class="application-status application-status--<%= item.status === 'active' ? 'pending' : item.status === 'used' ? 'accepted' : 'rejected' %>"><%= formatPinStatus(item.status) %></span></td>
+                    <td><%= item.label || '—' %></td>
+                    <td><%= new Date(item.createdAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+                    <td><%= item.usedAt ? new Date(item.usedAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : '—' %></td>
+                    <td>
+                      <% if (item.application) { %>
+                        <a href="/slc-admin/applications/<%= item.application._id %>"><%= item.application.applicationId %></a>
+                      <% } else { %>
+                        —
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (item.status === 'active') { %>
+                        <form method="POST" action="/slc-admin/admission-pins/<%= item._id %>/revoke" class="admin-inline-form" onsubmit="return confirm('Revoke this PIN?');">
+                          <button type="submit" class="btn btn--outline btn--sm">Revoke</button>
+                        </form>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="admin-search-empty" data-admin-search-empty hidden>No PINs match your search.</p>
+        <% } else { %>
+          <p class="admin-empty">No admission PINs found.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/js/admin-search.js"></script>
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

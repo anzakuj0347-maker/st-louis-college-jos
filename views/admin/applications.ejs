@@ -1,0 +1,76 @@
+<%- include('../partials/doc-start', { title: title }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <p class="eyebrow">Administration</p>
+    <h1><%= pageTitle %></h1>
+    <p>Review applications submitted from the public Apply Now form.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container admin-layout">
+    <%- include('../partials/admin-sidebar', { activeSection: activeSection }) %>
+    <div class="admin-main">
+      <% if (success) { %><div class="alert alert--success"><%= success %></div><% } %>
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div class="admin-panel">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">Applications (<%= applications.length %>)</h2>
+          <form class="admin-inline-filter" method="GET" action="/slc-admin/applications">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter" name="status" onchange="this.form.submit()">
+              <option value="">All statuses</option>
+              <% statusOptions.forEach(function(statusOption) { %>
+                <option value="<%= statusOption %>"<%= statusFilter === statusOption ? ' selected' : '' %>><%= formatApplicationStatus(statusOption) %></option>
+              <% }); %>
+            </select>
+          </form>
+        </div>
+
+        <% if (applications.length) { %>
+          <%- include('../partials/admin-search', { searchPlaceholder: searchPlaceholder }) %>
+
+          <div class="admin-table-wrap">
+            <table class="data-table admin-table" data-admin-search-table>
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Applicant</th>
+                  <th>Class</th>
+                  <th>Parent Phone</th>
+                  <th>Submitted</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% applications.forEach(function(app) { %>
+                  <tr data-search-row="<%= app.applicationId %> <%= app.firstName %> <%= app.middleName || '' %> <%= app.lastName %> <%= app.classApplyingFor %> <%= app.parentName %> <%= app.parentPhone %> <%= app.parentEmail || '' %> <%= app.status %>">
+                    <td><%= app.applicationId %></td>
+                    <td><%= app.firstName %><% if (app.middleName) { %> <%= app.middleName %><% } %> <%= app.lastName %></td>
+                    <td><%= app.classApplyingFor %></td>
+                    <td><%= app.parentPhone %></td>
+                    <td><%= new Date(app.createdAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+                    <td><span class="application-status application-status--<%= app.status %>"><%= formatApplicationStatus(app.status) %></span></td>
+                    <td><a href="/slc-admin/applications/<%= app._id %>" class="btn btn--outline btn--sm">View</a></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="admin-search-empty" data-admin-search-empty hidden>No applications match your search.</p>
+        <% } else { %>
+          <p class="admin-empty">No applications have been submitted yet.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/js/admin-search.js"></script>
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

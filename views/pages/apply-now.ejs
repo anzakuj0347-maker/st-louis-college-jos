@@ -1,0 +1,171 @@
+<%- include('../partials/doc-start', { title: 'Apply Now' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Admission</p>
+    <h1>Apply Now</h1>
+    <p>Complete the form below to apply for admission to <%= schoolName %>.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container apply-grid">
+    <div class="apply-info">
+      <h2>Before You Apply</h2>
+      <p>Please ensure you have reviewed the <a href="/admission/admission-requirement">admission requirements</a> and have accurate details ready.</p>
+      <ul class="apply-checklist">
+        <li>Applicant personal details</li>
+        <li>Parent or guardian contact information</li>
+        <li>Previous school information</li>
+      </ul>
+      <p>After submission, you can review and print your application. Save your application reference number for follow-up.</p>
+      <p><a href="/admission/applications/review">Already applied? View your application</a></p>
+      <p>Questions? Email <a href="mailto:<%= schoolEmail %>"><%= schoolEmail %></a></p>
+    </div>
+
+    <div class="apply-form-wrap">
+      <% if (admissionPin) { %>
+        <div class="apply-access-banner">
+          <p>Access granted with PIN <code><%= admissionPin.pin %></code></p>
+          <form method="POST" action="/admission/apply-now/logout">
+            <button type="submit" class="btn btn--outline btn--sm">Use Different PIN</button>
+          </form>
+        </div>
+      <% } %>
+
+      <% if (error) { %><div class="alert alert--error"><%= error %></div><% } %>
+
+      <div id="applicationPreviewPanel" class="application-preview-panel" hidden>
+        <div class="print-toolbar no-print application-preview-toolbar">
+          <p>Review your details carefully before submitting.</p>
+          <div class="print-toolbar-actions">
+            <button type="button" class="btn btn--outline" id="backToEditBtn">Back to Edit</button>
+            <button type="button" class="btn btn--outline" id="printPreviewBtn">Print Preview</button>
+            <button type="button" class="btn btn--gold" id="confirmSubmitBtn">Confirm &amp; Submit</button>
+          </div>
+        </div>
+        <div id="applicationPreviewContent" class="application-review-stage print-only application-print-stage"></div>
+      </div>
+
+      <form class="contact-form apply-form" id="admissionApplicationForm" method="POST" action="/admission/apply-now">
+          <h2 class="apply-form-heading">Application Form</h2>
+
+          <fieldset class="apply-fieldset">
+            <legend>Applicant Information</legend>
+            <div class="apply-form-grid">
+              <div class="form-group">
+                <label for="firstName">First Name *</label>
+                <input type="text" id="firstName" name="firstName" required value="<%= form.firstName || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="middleName">Middle Name</label>
+                <input type="text" id="middleName" name="middleName" value="<%= form.middleName || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name *</label>
+                <input type="text" id="lastName" name="lastName" required value="<%= form.lastName || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="dateOfBirth">Date of Birth *</label>
+                <input type="date" id="dateOfBirth" name="dateOfBirth" required value="<%= form.dateOfBirth || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="gender">Gender *</label>
+                <select id="gender" name="gender" required>
+                  <option value="Female"<%= (form.gender || 'Female') === 'Female' ? ' selected' : '' %>>Female</option>
+                  <option value="Male"<%= form.gender === 'Male' ? ' selected' : '' %>>Male</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="nationality">Nationality</label>
+                <input type="text" id="nationality" name="nationality" value="<%= form.nationality || 'Nigerian' %>">
+              </div>
+              <div class="form-group">
+                <label for="stateOfOrigin">State of Origin</label>
+                <input type="text" id="stateOfOrigin" name="stateOfOrigin" value="<%= form.stateOfOrigin || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="localGovernment">Local Government Area</label>
+                <input type="text" id="localGovernment" name="localGovernment" value="<%= form.localGovernment || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="religion">Religion</label>
+                <input type="text" id="religion" name="religion" value="<%= form.religion || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="classApplyingFor">Class Applying For *</label>
+                <select id="classApplyingFor" name="classApplyingFor" required>
+                  <option value="">Select class</option>
+                  <% classLevels.forEach(function(level) { %>
+                    <option value="<%= level %>"<%= form.classApplyingFor === level ? ' selected' : '' %>><%= level %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="apply-fieldset">
+            <legend>Previous School</legend>
+            <div class="apply-form-grid">
+              <div class="form-group">
+                <label for="previousSchool">Previous School</label>
+                <input type="text" id="previousSchool" name="previousSchool" value="<%= form.previousSchool || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="lastClassCompleted">Last Class Completed</label>
+                <input type="text" id="lastClassCompleted" name="lastClassCompleted" value="<%= form.lastClassCompleted || '' %>">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="apply-fieldset">
+            <legend>Parent / Guardian</legend>
+            <div class="apply-form-grid">
+              <div class="form-group apply-form-full">
+                <label for="parentName">Parent / Guardian Name *</label>
+                <input type="text" id="parentName" name="parentName" required value="<%= form.parentName || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="parentPhone">Phone Number *</label>
+                <input type="tel" id="parentPhone" name="parentPhone" required value="<%= form.parentPhone || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="parentEmail">Email Address</label>
+                <input type="email" id="parentEmail" name="parentEmail" value="<%= form.parentEmail || '' %>">
+              </div>
+              <div class="form-group apply-form-full">
+                <label for="parentAddress">Home Address *</label>
+                <textarea id="parentAddress" name="parentAddress" rows="3" required><%= form.parentAddress || '' %></textarea>
+              </div>
+              <div class="form-group">
+                <label for="emergencyContactName">Emergency Contact Name</label>
+                <input type="text" id="emergencyContactName" name="emergencyContactName" value="<%= form.emergencyContactName || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="emergencyContactPhone">Emergency Contact Phone</label>
+                <input type="tel" id="emergencyContactPhone" name="emergencyContactPhone" value="<%= form.emergencyContactPhone || '' %>">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="apply-fieldset">
+            <legend>Additional Information</legend>
+            <div class="form-group">
+              <label for="applicantNotes">Notes (optional)</label>
+              <textarea id="applicantNotes" name="applicantNotes" rows="4" placeholder="Any additional information for the admissions office"><%= form.applicantNotes || '' %></textarea>
+            </div>
+          </fieldset>
+
+          <div class="apply-form-actions">
+            <button type="button" class="btn btn--outline" id="reviewApplicationBtn">Review Application</button>
+            <button type="submit" class="btn btn--gold">Submit Application</button>
+          </div>
+        </form>
+    </div>
+  </div>
+</section>
+
+<script src="/js/apply-now.js"></script>
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

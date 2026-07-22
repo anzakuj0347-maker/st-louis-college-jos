@@ -1,0 +1,38 @@
+<%- include('../partials/doc-start', { title: 'Admission List' }) %>
+<%- include('../partials/header') %>
+
+<section class="page-hero">
+  <div class="container">
+    <p class="eyebrow">Admission</p>
+    <h1>Admission List</h1>
+    <p>View or download the published admission list for St. Louis College Jos.</p>
+  </div>
+</section>
+
+<section class="page-content">
+  <div class="container content-body content-body--document">
+    <% if (admissionList) { %>
+      <div class="document-actions">
+        <a href="/admission/admission-list/pdf" class="btn btn--gold" target="_blank" rel="noopener">Open PDF in New Tab</a>
+        <a href="/admission/admission-list/pdf" class="btn btn--outline" download="<%= admissionList.originalName || 'admission-list.pdf' %>">Download PDF</a>
+      </div>
+      <div class="pdf-viewer-wrap">
+        <iframe
+          src="/admission/admission-list/pdf"
+          title="Admission List PDF"
+          class="pdf-viewer"
+        ></iframe>
+      </div>
+      <% if (admissionList.updatedAt) { %>
+        <p class="document-meta">Last updated: <%= new Date(admissionList.updatedAt).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) %></p>
+      <% } %>
+    <% } else { %>
+      <div class="alert alert--info">
+        The admission list has not been published yet. Please check back later or contact the school admissions office.
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
+<%- include('../partials/doc-end') %>

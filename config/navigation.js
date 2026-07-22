@@ -26,7 +26,8 @@ module.exports = [
     children: [
       { label: 'Admission Requirement', path: '/admission/admission-requirement' },
       { label: 'Apply Now', path: '/admission/apply-now' },
-      { label: 'Entrance Exam Details', path: '/admission/entrance-exam-details' }
+      { label: 'Entrance Exam Details', path: '/admission/entrance-exam-details' },
+      { label: 'Admission List', path: '/admission/admission-list' }
     ]
   },
   {
