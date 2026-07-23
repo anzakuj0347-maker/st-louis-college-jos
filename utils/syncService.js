@@ -22,6 +22,12 @@ const COLLECTIONS = {
   },
   heroslides: { uniqueKey: 'order' },
   pages: { uniqueKey: 'slug' },
+  admissionlists: { uniqueKey: 'key' },
+  admissionpins: { uniqueKey: 'pin' },
+  admissionapplications: {
+    uniqueKey: 'applicationId',
+    refFields: [{ field: 'admissionPin', collection: 'admissionpins' }]
+  },
   events: { compoundUniqueKeys: ['title', 'eventDate'] },
   news: { compoundUniqueKeys: ['title', 'publishedAt'] }
 };
@@ -34,12 +40,15 @@ const SYNC_STEP_LABELS = {
   staffs: 'Staff',
   heroslides: 'Hero slides',
   pages: 'Pages',
+  admissionlists: 'Admission List PDF',
+  admissionpins: 'Admission PINs',
+  admissionapplications: 'Admission Applications',
   events: 'Events',
   news: 'News',
   results: 'Results'
 };
 
-const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'pages', 'events', 'news', 'results'];
+const SYNC_COLLECTION_ORDER = ['subjects', 'academicsessions', 'users', 'staffs', 'heroslides', 'pages', 'admissionlists', 'admissionpins', 'admissionapplications', 'events', 'news', 'results'];
 const SYNC_PREVIEW_TIMEOUT_MS = 15000;
 const SYNC_BATCH_SIZE = 100;
 
@@ -359,6 +368,42 @@ function documentsNeedSync(localDoc, remoteDoc, config, idMaps, context = {}) {
     for (const field of ['title', 'section', 'content']) {
       if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
     }
+  }
+
+  if (config.uniqueKey === 'key') {
+    for (const field of ['title', 'originalName', 'mimeType']) {
+      if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
+    }
+    const localSize = localDoc.data?.length || localDoc.fileSize || 0;
+    const remoteSize = remoteDoc.data?.length || remoteDoc.fileSize || 0;
+    if (localSize !== remoteSize) return true;
+  }
+
+  if (config.uniqueKey === 'pin') {
+    for (const field of ['status', 'label', 'createdBy']) {
+      if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
+    }
+    if (Boolean(localDoc.usedAt) !== Boolean(remoteDoc.usedAt)) return true;
+    if (localDoc.usedAt && remoteDoc.usedAt &&
+      new Date(localDoc.usedAt).getTime() !== new Date(remoteDoc.usedAt).getTime()) {
+      return true;
+    }
+  }
+
+  if (config.uniqueKey === 'applicationId') {
+    const fields = [
+      'firstName', 'middleName', 'lastName', 'gender', 'nationality', 'stateOfOrigin',
+      'localGovernment', 'religion', 'classApplyingFor', 'previousSchool', 'lastClassCompleted',
+      'parentName', 'parentPhone', 'parentEmail', 'parentAddress', 'emergencyContactName',
+      'emergencyContactPhone', 'applicantNotes', 'status', 'adminNotes'
+    ];
+    for (const field of fields) {
+      if (String(localDoc[field] || '') !== String(remoteDoc[field] || '')) return true;
+    }
+    if (new Date(localDoc.dateOfBirth).getTime() !== new Date(remoteDoc.dateOfBirth).getTime()) return true;
+
+    const remappedPin = remapObjectIds(localDoc.admissionPin, idMaps.admissionpins || new Map());
+    if (String(remappedPin || '') !== String(remoteDoc.admissionPin || '')) return true;
   }
 
   if (config.uniqueKey === 'studentId' && config.refFields) {
@@ -927,7 +972,10 @@ async function runSync(onProgress) {
       subjects: new Map(),
       users: new Map(),
       staffs: new Map(),
-      academicsessions: new Map()
+      academicsessions: new Map(),
+      admissionpins: new Map(),
+      admissionapplications: new Map(),
+      admissionlists: new Map()
     };
 
     const results = {};
@@ -992,26 +1040,6 @@ async function runSync(onProgress) {
     );
 
     step = 6;
-    report(`Syncing ${SYNC_STEP_LABELS.events}...`, { collection: 'events' });
-    results.events = await syncContentCollection(
-      localConn.collection('events'),
-      remoteConn.collection('events'),
-      COLLECTIONS.events,
-      eventRecordKey,
-      lastSyncedAt
-    );
-
-    step = 7;
-    report(`Syncing ${SYNC_STEP_LABELS.news}...`, { collection: 'news' });
-    results.news = await syncContentCollection(
-      localConn.collection('news'),
-      remoteConn.collection('news'),
-      COLLECTIONS.news,
-      newsRecordKey,
-      lastSyncedAt
-    );
-
-    step = 8;
     report(`Syncing ${SYNC_STEP_LABELS.pages}...`, { collection: 'pages' });
     results.pages = await syncSimpleCollection(
       localConn.collection('pages'),
@@ -1022,7 +1050,66 @@ async function runSync(onProgress) {
       lastSyncedAt
     );
 
+    step = 7;
+    report(`Syncing ${SYNC_STEP_LABELS.admissionlists}...`, { collection: 'admissionlists' });
+    results.admissionlists = await syncSimpleCollection(
+      localConn.collection('admissionlists'),
+      remoteConn.collection('admissionlists'),
+      COLLECTIONS.admissionlists,
+      idMaps,
+      {},
+      lastSyncedAt
+    );
+
+    step = 8;
+    report(`Syncing ${SYNC_STEP_LABELS.admissionpins}...`, { collection: 'admissionpins' });
+    results.admissionpins = await syncSimpleCollection(
+      localConn.collection('admissionpins'),
+      remoteConn.collection('admissionpins'),
+      COLLECTIONS.admissionpins,
+      idMaps,
+      {},
+      lastSyncedAt
+    );
+
+    idMaps.admissionpins = await buildIdMap(
+      localConn.collection('admissionpins'),
+      remoteConn.collection('admissionpins'),
+      'pin'
+    );
+
     step = 9;
+    report(`Syncing ${SYNC_STEP_LABELS.admissionapplications}...`, { collection: 'admissionapplications' });
+    results.admissionapplications = await syncSimpleCollection(
+      localConn.collection('admissionapplications'),
+      remoteConn.collection('admissionapplications'),
+      COLLECTIONS.admissionapplications,
+      idMaps,
+      {},
+      lastSyncedAt
+    );
+
+    step = 10;
+    report(`Syncing ${SYNC_STEP_LABELS.events}...`, { collection: 'events' });
+    results.events = await syncContentCollection(
+      localConn.collection('events'),
+      remoteConn.collection('events'),
+      COLLECTIONS.events,
+      eventRecordKey,
+      lastSyncedAt
+    );
+
+    step = 11;
+    report(`Syncing ${SYNC_STEP_LABELS.news}...`, { collection: 'news' });
+    results.news = await syncContentCollection(
+      localConn.collection('news'),
+      remoteConn.collection('news'),
+      COLLECTIONS.news,
+      newsRecordKey,
+      lastSyncedAt
+    );
+
+    step = 12;
     report(`Syncing ${SYNC_STEP_LABELS.results}...`, { collection: 'results' });
     results.results = await syncResults(
       localConn.collection('results'),

@@ -84,6 +84,13 @@ function canAccessApplicationReview(req, application) {
   if (!application) return false;
   if (req.session.submittedApplicationId === application._id.toString()) return true;
 
+  if (req.session.admissionPinId && application.admissionPin) {
+    const linkedPinId = application.admissionPin._id
+      ? application.admissionPin._id.toString()
+      : String(application.admissionPin);
+    if (req.session.admissionPinId === linkedPinId) return true;
+  }
+
   const phone = normalizePhone(req.body.parentPhone || req.query.phone);
   const applicationPhone = normalizePhone(application.parentPhone);
   return Boolean(phone && applicationPhone && phone === applicationPhone);

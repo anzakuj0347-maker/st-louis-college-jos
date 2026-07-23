@@ -1,21 +1,29 @@
 const AdmissionPin = require('../models/AdmissionPin');
 
-async function loadSessionAdmissionPin(req) {
+async function loadSessionAdmissionPin(req, { allowUsed = false } = {}) {
   const pinId = req.session.admissionPinId;
   if (!pinId) return null;
 
   const pinDoc = await AdmissionPin.findById(pinId);
-  if (!pinDoc || pinDoc.status !== 'active') {
+  if (!pinDoc || pinDoc.status === 'revoked') {
     delete req.session.admissionPinId;
     return null;
   }
 
-  return pinDoc;
+  if (pinDoc.status === 'used') {
+    if (!allowUsed || !pinDoc.application) {
+      delete req.session.admissionPinId;
+      return null;
+    }
+    return pinDoc;
+  }
+
+  return pinDoc.status === 'active' ? pinDoc : null;
 }
 
-async function requireAdmissionPin(req, res, next) {
+async function requireActiveAdmissionPin(req, res, next) {
   try {
-    const pinDoc = await loadSessionAdmissionPin(req);
+    const pinDoc = await loadSessionAdmissionPin(req, { allowUsed: false });
     if (!pinDoc) {
       return res.redirect('/admission/apply-now/access');
     }
@@ -29,5 +37,6 @@ async function requireAdmissionPin(req, res, next) {
 
 module.exports = {
   loadSessionAdmissionPin,
-  requireAdmissionPin
+  requireActiveAdmissionPin,
+  requireAdmissionPin: requireActiveAdmissionPin
 };

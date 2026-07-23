@@ -1,14 +1,14 @@
-<%- include('../partials/doc-start', { title: 'Application Review', bodyClass: 'application-review-page' }) %>
+<%- include('../partials/doc-start', { title: 'Application Preview', bodyClass: 'application-review-page' }) %>
 <%- include('../partials/header') %>
 
 <section class="page-hero page-hero--compact no-print">
   <div class="container">
     <p class="eyebrow">Admission</p>
-    <h1><%= authorized ? 'Application Review' : 'View Application' %></h1>
+    <h1><%= authorized ? 'Application Preview' : 'Preview Application' %></h1>
     <% if (authorized && application) { %>
       <p>Reference: <strong><%= application.applicationId %></strong></p>
     <% } else { %>
-      <p>Enter your application reference and parent or guardian phone number to review and print your form.</p>
+      <p>Enter your application reference and parent or guardian phone number to preview and print your form.</p>
     <% } %>
   </div>
 </section>
@@ -41,15 +41,26 @@
               value="<%= lookup.parentPhone || '' %>"
             >
           </div>
-          <button type="submit" class="btn btn--gold">View Application</button>
+          <button type="submit" class="btn btn--gold">Preview Application</button>
         </form>
         <p class="auth-hint"><a href="/admission/apply-now/access">Apply for admission</a></p>
       </div>
     <% } else { %>
       <% if (success) { %><div class="alert alert--success no-print"><%= success %></div><% } %>
       <div class="print-toolbar no-print">
-        <p>Review your submitted application for <strong><%= getApplicantFullName(application) %></strong>.</p>
+        <p>
+          <% if (reprintOnly) { %>
+            Preview and print your submitted application for <strong><%= getApplicantFullName(application) %></strong>.
+          <% } else { %>
+            Preview your submitted application for <strong><%= getApplicantFullName(application) %></strong>.
+          <% } %>
+        </p>
         <div class="print-toolbar-actions">
+          <% if (reprintOnly) { %>
+            <form method="POST" action="/admission/apply-now/logout" class="admin-inline-form">
+              <button type="submit" class="btn btn--outline">Use Different PIN</button>
+            </form>
+          <% } %>
           <button type="button" class="btn btn--gold" id="printApplicationBtn">Print Application</button>
         </div>
       </div>

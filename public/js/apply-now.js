@@ -4,7 +4,7 @@
   const form = document.getElementById('admissionApplicationForm');
   const previewPanel = document.getElementById('applicationPreviewPanel');
   const previewContent = document.getElementById('applicationPreviewContent');
-  const reviewBtn = document.getElementById('reviewApplicationBtn');
+  const previewBtn = document.getElementById('previewApplicationBtn');
   const backToEditBtn = document.getElementById('backToEditBtn');
   const printPreviewBtn = document.getElementById('printPreviewBtn');
   const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
@@ -99,7 +99,7 @@
     document.body.classList.remove('application-preview-mode');
   }
 
-  reviewBtn?.addEventListener('click', showPreview);
+  previewBtn?.addEventListener('click', showPreview);
   backToEditBtn?.addEventListener('click', hidePreview);
   printPreviewBtn?.addEventListener('click', function () {
     window.print();

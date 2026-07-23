@@ -129,11 +129,15 @@ router.post('/admission/apply-now/access', async (req, res, next) => {
     }
 
     const pinDoc = await AdmissionPin.findOne({ pin });
-    if (!pinDoc || pinDoc.status !== 'active') {
+    if (!pinDoc || pinDoc.status === 'revoked') {
       return renderApplyNowAccessPage(res, {
-        error: 'This PIN is invalid, has already been used, or has been revoked.',
+        error: 'This PIN is invalid or has been revoked.',
         pin
       });
+    }
+
+    if (pinDoc.status === 'used') {
+      return redirectUsedPinToApplication(req, res, pinDoc, renderApplyNowAccessPage);
     }
 
     req.session.admissionPinId = pinDoc._id.toString();
@@ -145,11 +149,31 @@ router.post('/admission/apply-now/access', async (req, res, next) => {
 
 router.post('/admission/apply-now/logout', (req, res) => {
   delete req.session.admissionPinId;
+  delete req.session.submittedApplicationId;
   res.redirect('/admission/apply-now/access');
 });
 
-router.get('/admission/apply-now', requireAdmissionPin, (req, res) => {
-  renderApplyNowPage(res, { admissionPin: req.admissionPin });
+router.get('/admission/apply-now', async (req, res, next) => {
+  try {
+    const pinDoc = await AdmissionPin.findById(req.session.admissionPinId);
+    if (!pinDoc || pinDoc.status === 'revoked') {
+      delete req.session.admissionPinId;
+      return res.redirect('/admission/apply-now/access');
+    }
+
+    if (pinDoc.status === 'used') {
+      return redirectUsedPinToApplication(req, res, pinDoc, renderApplyNowAccessPage);
+    }
+
+    if (pinDoc.status !== 'active') {
+      delete req.session.admissionPinId;
+      return res.redirect('/admission/apply-now/access');
+    }
+
+    renderApplyNowPage(res, { admissionPin: pinDoc });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/admission/apply-now', requireAdmissionPin, async (req, res, next) => {
@@ -197,16 +221,31 @@ router.post('/admission/apply-now', requireAdmissionPin, async (req, res, next) 
 
 function renderApplicationReviewPage(res, data = {}) {
   res.render('pages/application-review', {
-    title: 'Application Review',
+    title: 'Application Preview',
     authorized: false,
     application: null,
     error: null,
     lookup: {},
+    reprintOnly: false,
     formatApplicationDate,
     formatApplicationDateTime,
     getApplicantFullName,
     ...data
   });
+}
+
+async function redirectUsedPinToApplication(req, res, pinDoc, renderAccessPage) {
+  const application = await AdmissionApplication.findById(pinDoc.application);
+  if (!application) {
+    return renderAccessPage(res, {
+      error: 'This PIN was used but the linked application could not be found. Contact the admissions office.',
+      pin: pinDoc.pin
+    });
+  }
+
+  req.session.admissionPinId = pinDoc._id.toString();
+  req.session.submittedApplicationId = application._id.toString();
+  return res.redirect(`/admission/applications/${application.applicationId}/review?reprint=1`);
 }
 
 router.get('/admission/applications/review', (req, res) => {
@@ -269,9 +308,12 @@ router.get('/admission/applications/:applicationId/review', async (req, res, nex
     renderApplicationReviewPage(res, {
       authorized: true,
       application,
+      reprintOnly: req.query.reprint === '1',
       success: req.query.submitted === '1'
-        ? 'Application submitted successfully. Review your details below and print a copy for your records.'
-        : null
+        ? 'Application submitted successfully. Preview your form below and print a copy for your records.'
+        : req.query.reprint === '1'
+          ? 'This PIN was already used to submit an application. You can preview and print your submitted form below.'
+          : null
     });
   } catch (err) {
     next(err);
