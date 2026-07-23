@@ -3350,25 +3350,20 @@ body.print-result-page .report-card-summary-qr-code {
     overflow: hidden;
   }
 
-  body:not(.application-review-page):not(.application-preview-mode) * {
+  body:not(.application-review-page):not(.application-preview-mode):not(.print-result-page) * {
     visibility: hidden;
   }
 
-  .print-only,
-  .print-only *,
-  .student-terminal-report,
-  .student-terminal-report *,
-  .password-print-only,
-  .password-print-only *,
+  body:not(.application-review-page):not(.application-preview-mode) .print-only,
+  body:not(.application-review-page):not(.application-preview-mode) .print-only *,
+  body:not(.application-review-page):not(.application-preview-mode) .student-terminal-report,
+  body:not(.application-review-page):not(.application-preview-mode) .student-terminal-report *,
+  body:not(.application-review-page):not(.application-preview-mode) .password-print-only,
+  body:not(.application-review-page):not(.application-preview-mode) .password-print-only *,
   body.application-review-page .application-print-stage,
   body.application-review-page .application-print-stage *,
   body.application-preview-mode .application-print-stage,
   body.application-preview-mode .application-print-stage * {
-    visibility: visible;
-  }
-
-  body.print-result-page,
-  body.print-result-page * {
     visibility: visible;
   }
 
