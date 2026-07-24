@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /slc-admin/
+Disallow: /staff/
+Disallow: /results/
+Disallow: /press-club/
+
+Sitemap: https://louisvillejos.sch.ng/sitemap.xml

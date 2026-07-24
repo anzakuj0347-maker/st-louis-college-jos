@@ -23,6 +23,27 @@ const {
 } = require('../utils/admissionPinHelpers');
 const { loadSessionAdmissionPin, requireAdmissionPin } = require('../middleware/admissionPinAuth');
 const { resolveHeroSlides } = require('../utils/heroImageHelpers');
+const {
+  collectNavPaths,
+  mergePathEntries,
+  buildSitemapXml,
+  getSiteBaseUrl
+} = require('../utils/sitemapHelpers');
+
+router.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const baseUrl = getSiteBaseUrl(req);
+    const cmsPages = await Page.find().select('section slug updatedAt createdAt').lean();
+    const pathEntries = mergePathEntries(collectNavPaths(), cmsPages);
+    const xml = buildSitemapXml(baseUrl, pathEntries);
+
+    res.type('application/xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/', async (req, res, next) => {
   try {
