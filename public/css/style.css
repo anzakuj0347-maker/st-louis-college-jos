@@ -67,7 +67,10 @@ body:not(.home-page) > .cookie-banner {
 body:has(.student-report-card)::before,
 body:has(.print-ca-sheet)::before,
 body:has(.password-print-view)::before,
-body.print-result-page::before {
+body:has(.application-review-sheet)::before,
+body.print-result-page::before,
+body.application-review-page::before,
+body.application-preview-mode::before {
   display: none;
 }
 
@@ -1017,6 +1020,26 @@ a:hover { color: var(--msm-red-dark); }
   box-shadow: var(--shadow);
   color: #1a1a1a;
   position: relative;
+  isolation: isolate;
+}
+
+.application-review-sheet::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(65%, 360px);
+  height: min(65%, 360px);
+  transform: translate(-50%, -50%);
+  background: url('/images/logo.jpg') center / contain no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.application-review-sheet > * {
+  position: relative;
+  z-index: 1;
 }
 
 .application-review-sheet--draft {
@@ -3329,13 +3352,15 @@ body.print-result-page .report-card-summary-qr-code {
 
   .student-report-card::before,
   .print-ca-sheet::before,
-  .password-print-page::before {
+  .password-print-page::before,
+  .application-review-sheet::before {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
   .print-ca-sheet:not(:has(.student-report-card))::before,
-  .password-print-page::before {
+  .password-print-page::before,
+  .application-review-sheet::before {
     position: fixed;
     top: 50%;
     left: 50%;
